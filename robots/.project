@@ -14,4 +14,45 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<dependencies>
+    	<!-- Выберите предпочтительный или переместите предпочтительный вверх: -->
+
+            <!-- https://mvnrepository.com/artifact/org.eclipse.platform/org.eclipse.swt.win32.win32.x86_64 -->
+            <dependency>
+                <groupId>org.eclipse.swt</groupId>
+                <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
+                <version>${swt.version}</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.eclipse.maven/org.eclipse.swt.win32.win32.x86 -->
+            <dependency>
+                <groupId>org.eclipse.swt</groupId>
+                <artifactId>org.eclipse.swt.win32.win32.x86</artifactId>
+                <version>${swt.version}</version>
+                <!-- Чтобы использовать отладочную банку, добавьте эту -->
+                <classifier>debug</classifier>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.wso2.wsf/org.eclipse.swt.gtk.linux.86 -->
+            <dependency>
+                <groupId>org.eclipse.swt</groupId>
+                <artifactId>org.eclipse.swt.gtk.linux.x86</artifactId>
+                <version>${swt.version}</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.kermeta.eclipse/org.eclipse.swt.gtk.linux.x86_64 -->
+            <dependency>
+                <groupId>org.eclipse.swt</groupId>
+                <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
+                <version>${swt.version}</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.eclipse.platform/org.eclipse.swt.cocoa.macosx.x86_64 -->
+            <dependency>
+                <groupId>org.eclipse.swt</groupId>
+                <artifactId>org.eclipse.swt.cocoa.macosx.x86_64</artifactId>
+                <version>${swt.version}</version>
+            </dependency>
+    	</dependencies>
+
 </projectDescription>
