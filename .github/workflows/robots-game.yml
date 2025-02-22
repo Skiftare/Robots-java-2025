@@ -24,7 +24,7 @@ jobs:
           cache: maven
 
       - name: maven build
-        run: mvn -pl game-visualizer -am package
+        run: mvn -pl robots -am package
 
   checkstyle:
     name: checkstyle
@@ -38,7 +38,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - run: mvn -pl game-visualizer -am checkstyle:check
+      - run: mvn -pl robots -am checkstyle:check
 
   integration-test:
     name: integration tests
@@ -52,7 +52,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - run: mvn -pl game-visualizer -am verify -Dskip.unit.tests=true
+      - run: mvn -pl robots -am verify -Dskip.unit.tests=true
 
   jacoco-report:
     name: Generate JaCoCo Report
@@ -67,7 +67,7 @@ jobs:
           cache: maven
           
       - name: Generate JaCoCo Report
-        run: mvn -pl game-visualizer -am test jacoco:report
+        run: mvn -pl robots -am test jacoco:report
         
       - name: Upload JaCoCo Report
         uses: actions/upload-artifact@v4
