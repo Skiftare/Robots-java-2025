@@ -19,8 +19,7 @@ public class GameVisualizer extends JPanel
 
     private static Timer initTimer()
     {
-        Timer timer = new Timer("events generator", true);
-        return timer;
+        return new Timer("events generator", true);
     }
 
     private volatile double m_robotPositionX = 100;
@@ -33,9 +32,9 @@ public class GameVisualizer extends JPanel
     private static final double maxVelocity = 0.1;
     private static final double maxAngularVelocity = 0.001;
 
-    private int panelWidth = 0; // Added to track the width of the panel dynamically
-    private int panelHeight = 0; // Added to track the height of the panel dynamically
-    private boolean isPanelInitialized = false; // Flag to ensure panel is initialized before drawing
+    private int panelWidth = 0;
+    private int panelHeight = 0;
+    private boolean isPanelInitialized = false; // Флаг для проверки инициализации панели
 
     public GameVisualizer()
     {
@@ -95,7 +94,7 @@ public class GameVisualizer extends JPanel
 
     protected void onModelUpdateEvent()
     {
-        if (!isPanelInitialized) return; // Check if panel is initialized before updating model
+        if (!isPanelInitialized) return; // Проверка, что панель инициализирована
         double distance = distance(m_targetPositionX, m_targetPositionY,
                 m_robotPositionX, m_robotPositionY);
         if (distance < 0.5)
@@ -128,30 +127,28 @@ public class GameVisualizer extends JPanel
 
     private void moveRobot(double velocity, double angularVelocity, double duration)
     {
-        panelHeight = getHeight(); // Update panelHeight with each move
-        panelWidth = getWidth(); // Update panelWidth with each move
         velocity = applyLimits(velocity, 0, maxVelocity);
         angularVelocity = applyLimits(angularVelocity, -maxAngularVelocity, maxAngularVelocity);
 
-        // Calculate new position considering angular movement
+        // Вычисление новой позиции
         double newX = m_robotPositionX + velocity * duration * Math.cos(m_robotDirection);
         double newY = m_robotPositionY + velocity * duration * Math.sin(m_robotDirection);
 
-        // Update panel size dynamically whenever it's drawn
-        panelWidth = getWidth() + 100;  // Adjusting panelWidth with a margin
-        panelHeight = getHeight() + 100; // Adjusting panelHeight with a margin
+        if (panelWidth == 0 || panelHeight == 0) {
+            panelWidth = getWidth();
+            panelHeight = getHeight();
+        }
 
-        // Handling border overflow by teleporting the robot to the opposite side
-        if (newX < 0) newX = panelWidth; // If robot goes past left boundary, teleport to right
-        if (newX > panelWidth) newX = 0; // If robot goes past right boundary, teleport to left
+        // Проверяем, выходит ли робот за границу
+        if (newX < 0) newX = panelWidth; // Если заходит за левую границу, телепортируем вправо
+        if (newX > panelWidth) newX = 0; // Если заходит за правую границу, телепортируем влево
 
-        if (newY < 0) newY = panelHeight; // If robot goes past top boundary, teleport to bottom
-        if (newY > panelHeight) newY = 0; // If robot goes past bottom boundary, teleport to top
+        if (newY < 0) newY = panelHeight; // Если заходит за верхнюю границу, телепортируем вниз
+        if (newY > panelHeight) newY = 0; // Если заходит за нижнюю границу, телепортируем вверх
 
         m_robotPositionX = newX;
         m_robotPositionY = newY;
 
-        // Update robot's direction
         double newDirection = asNormalizedRadians(m_robotDirection + angularVelocity * duration);
         m_robotDirection = newDirection;
     }
@@ -179,12 +176,11 @@ public class GameVisualizer extends JPanel
     {
         super.paint(g);
 
-        // Update panel size with each repaint
-        panelWidth = getWidth();
-        panelHeight = getHeight();
-
         if (!isPanelInitialized) {
-            isPanelInitialized = true; // Mark panel as initialized on first paint
+            // Инициализируем размеры панели после первого рендеринга
+            panelWidth = getWidth();
+            panelHeight = getHeight();
+            isPanelInitialized = true; // Флаг, что панель теперь инициализирована
         }
 
         Graphics2D g2d = (Graphics2D)g;
@@ -209,11 +205,11 @@ public class GameVisualizer extends JPanel
         AffineTransform t = AffineTransform.getRotateInstance(direction, robotCenterX, robotCenterY);
         g.setTransform(t);
         g.setColor(Color.MAGENTA);
-        fillOval(g, robotCenterX, robotCenterY, 30, 10); // Drawing the robot's body
+        fillOval(g, robotCenterX, robotCenterY, 30, 10);
         g.setColor(Color.BLACK);
         drawOval(g, robotCenterX, robotCenterY, 30, 10);
         g.setColor(Color.WHITE);
-        fillOval(g, robotCenterX  + 10, robotCenterY, 5, 5); // Drawing the robot's "eye"
+        fillOval(g, robotCenterX  + 10, robotCenterY, 5, 5);
         g.setColor(Color.BLACK);
         drawOval(g, robotCenterX  + 10, robotCenterY, 5, 5);
     }
@@ -223,7 +219,7 @@ public class GameVisualizer extends JPanel
         AffineTransform t = AffineTransform.getRotateInstance(0, 0, 0);
         g.setTransform(t);
         g.setColor(Color.GREEN);
-        fillOval(g, x, y, 5, 5); // Drawing the target
+        fillOval(g, x, y, 5, 5);
         g.setColor(Color.BLACK);
         drawOval(g, x, y, 5, 5);
     }
