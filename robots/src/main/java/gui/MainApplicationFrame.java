@@ -13,6 +13,9 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.beans.PropertyVetoException;
 
 import log.Logger;
 
@@ -36,8 +39,6 @@ public class MainApplicationFrame extends JFrame {
         setContentPane(desktopPane);
 
 
-
-
         GameWindow gameWindow = new GameWindow();
         gameWindow.setSize(screenSize.width, screenSize.height);
         addWindow(gameWindow);
@@ -48,6 +49,13 @@ public class MainApplicationFrame extends JFrame {
 
         setJMenuBar(generateMenuBar());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                resizeInternalFrames();
+            }
+        });
+
     }
 
     protected LogWindow createLogWindow() {
@@ -59,6 +67,29 @@ public class MainApplicationFrame extends JFrame {
         Logger.debug("Протокол работает");
         return logWindow;
     }
+
+    private void resizeInternalFrames() {
+        SwingUtilities.invokeLater(() -> {
+            int width = desktopPane.getWidth();
+            int height = desktopPane.getHeight();
+
+            if (width == 0 || height == 0) {
+                Logger.debug("Ошибка: размер desktopPane некорректен!");
+                return;
+            }
+
+            Logger.debug("Изменяем размеры окон: " + width + "x" + height);
+
+            for (JInternalFrame frame : desktopPane.getAllFrames()) {
+                frame.setBounds(0, 0, width, height);
+                frame.revalidate();
+                frame.repaint();
+            }
+            desktopPane.revalidate();
+            desktopPane.repaint();
+        });
+    }
+
 
     protected void addWindow(JInternalFrame frame) {
         desktopPane.add(frame);

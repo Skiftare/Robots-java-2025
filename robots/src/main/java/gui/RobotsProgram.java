@@ -13,7 +13,9 @@ public class RobotsProgram {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         SwingUtilities.invokeLater(() -> {
+
             MainApplicationFrame frame = new MainApplicationFrame();
             frame.pack();
             frame.setVisible(true);
