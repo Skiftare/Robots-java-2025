@@ -1,6 +1,7 @@
 package gui;
 
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 
 import javax.swing.JDesktopPane;
@@ -12,14 +13,8 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.beans.PropertyVetoException;
 
 import log.Logger;
-
-import static java.lang.Math.min;
-import static java.lang.Math.round;
 
 /**
  * Что требуется сделать:
@@ -28,15 +23,12 @@ import static java.lang.Math.round;
  */
 public class MainApplicationFrame extends JFrame {
     private final JDesktopPane desktopPane = new JDesktopPane();
-    private final int inset = 50;
 
     public MainApplicationFrame() {
-
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        Rectangle screenBounds = gd.getDefaultConfiguration().getBounds();
-        Dimension screenSize = new Dimension(screenBounds.width, screenBounds.height);
-
-        Logger.debug("Размер экрана: " + screenSize.width + "x" + screenSize.height);
+        //Make the big window be indented 50 pixels from each edge
+        //of the screen.
+        int inset = 50;
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds(inset, inset,
                 screenSize.width,
                 screenSize.height);
@@ -44,8 +36,10 @@ public class MainApplicationFrame extends JFrame {
         setContentPane(desktopPane);
 
 
+
+
         GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(screenSize.width - inset, screenSize.height - inset);
+        gameWindow.setSize(screenSize.width, screenSize.height);
         addWindow(gameWindow);
 
 
@@ -54,14 +48,6 @@ public class MainApplicationFrame extends JFrame {
 
         setJMenuBar(generateMenuBar());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                resizeInternalFrames();
-            }
-        });
-
     }
 
     protected LogWindow createLogWindow() {
@@ -74,92 +60,92 @@ public class MainApplicationFrame extends JFrame {
         return logWindow;
     }
 
-    private void resizeInternalFrames() {
-        SwingUtilities.invokeLater(() -> {
-            int width = desktopPane.getWidth();
-            int height = desktopPane.getHeight();
-
-            if (width == 0 || height == 0) {
-                Logger.debug("Ошибка: размер desktopPane некорректен!");
-                return;
-            }
-
-            Logger.debug("Изменяем размеры окон: " + width + "x" + height);
-
-            for (JInternalFrame frame : desktopPane.getAllFrames()) {
-                double widthRatio = (double) frame.getWidth() / desktopPane.getWidth();
-                double heightRatio = (double) frame.getHeight() / desktopPane.getHeight();
-                double xRatio = (double) frame.getX() / desktopPane.getWidth();
-                double yRatio = (double) frame.getY() / desktopPane.getHeight();
-                int newWidth = (int) round(width / widthRatio);
-                int newHeight = (int) round(height / heightRatio);
-                int newX = (int) round(width * xRatio);
-                int newY = (int) round(height * yRatio);
-
-                if (newHeight > desktopPane.getHeight() - newY) {
-                    newHeight = desktopPane.getHeight() - newY;
-                }
-                if (newWidth > desktopPane.getWidth() - newX) {
-                    newWidth = desktopPane.getWidth() - newX;
-                }
-
-                frame.setBounds(newX, newY, newWidth, newHeight);
-                frame.revalidate();
-                frame.repaint();
-            }
-            desktopPane.revalidate();
-            desktopPane.repaint();
-        });
-    }
-
-
     protected void addWindow(JInternalFrame frame) {
         desktopPane.add(frame);
         frame.setVisible(true);
     }
 
+//    protected JMenuBar createMenuBar() {
+//        JMenuBar menuBar = new JMenuBar();
+// 
+//        //Set up the lone menu.
+//        JMenu menu = new JMenu("Document");
+//        menu.setMnemonic(KeyEvent.VK_D);
+//        menuBar.add(menu);
+// 
+//        //Set up the first menu item.
+//        JMenuItem menuItem = new JMenuItem("New");
+//        menuItem.setMnemonic(KeyEvent.VK_N);
+//        menuItem.setAccelerator(KeyStroke.getKeyStroke(
+//                KeyEvent.VK_N, ActionEvent.ALT_MASK));
+//        menuItem.setActionCommand("new");
+////        menuItem.addActionListener(this);
+//        menu.add(menuItem);
+// 
+//        //Set up the second menu item.
+//        menuItem = new JMenuItem("Quit");
+//        menuItem.setMnemonic(KeyEvent.VK_Q);
+//        menuItem.setAccelerator(KeyStroke.getKeyStroke(
+//                KeyEvent.VK_Q, ActionEvent.ALT_MASK));
+//        menuItem.setActionCommand("quit");
+
+    /// /        menuItem.addActionListener(this);
+//        menu.add(menuItem);
+// 
+//        return menuBar;
+//    }
+
+
     private JMenuBar generateMenuBar() {
         JMenuBar menuBar = new JMenuBar();
+        menuBar.add(createLookAndFeelMenu());
+        menuBar.add(createTestMenu());
+        return menuBar;
+    }
 
+    private JMenu createLookAndFeelMenu() {
         JMenu lookAndFeelMenu = new JMenu("Режим отображения");
         lookAndFeelMenu.setMnemonic(KeyEvent.VK_V);
-        lookAndFeelMenu.getAccessibleContext().setAccessibleDescription(
-                "Управление режимом отображения приложения");
+        lookAndFeelMenu.getAccessibleContext().setAccessibleDescription("Управление режимом отображения приложения");
 
-        {
-            JMenuItem systemLookAndFeel = new JMenuItem("Системная схема", KeyEvent.VK_S);
-            systemLookAndFeel.addActionListener((event) -> {
-                setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                this.invalidate();
-            });
-            lookAndFeelMenu.add(systemLookAndFeel);
-        }
+        lookAndFeelMenu.add(createSystemLookAndFeelMenuItem());
+        lookAndFeelMenu.add(createCrossPlatformLookAndFeelMenuItem());
+        return lookAndFeelMenu;
+    }
 
-        {
-            JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
-            crossplatformLookAndFeel.addActionListener((event) -> {
-                setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-                this.invalidate();
-            });
-            lookAndFeelMenu.add(crossplatformLookAndFeel);
-        }
+    private JMenuItem createSystemLookAndFeelMenuItem() {
+        JMenuItem systemLookAndFeel = new JMenuItem("Системная схема", KeyEvent.VK_S);
+        systemLookAndFeel.addActionListener((event) -> {
+            setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            this.invalidate();
+        });
+        return systemLookAndFeel;
+    }
 
+    private JMenuItem createCrossPlatformLookAndFeelMenuItem() {
+        JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
+        crossplatformLookAndFeel.addActionListener((event) -> {
+            setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            this.invalidate();
+        });
+        return crossplatformLookAndFeel;
+    }
+
+    private JMenu createTestMenu() {
         JMenu testMenu = new JMenu("Тесты");
         testMenu.setMnemonic(KeyEvent.VK_T);
-        testMenu.getAccessibleContext().setAccessibleDescription(
-                "Тестовые команды");
+        testMenu.getAccessibleContext().setAccessibleDescription("Тестовые команды");
 
-        {
-            JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
-            addLogMessageItem.addActionListener((event) -> {
-                Logger.debug("Новая строка");
-            });
-            testMenu.add(addLogMessageItem);
-        }
+        testMenu.add(createLogMessageMenuItem());
+        return testMenu;
+    }
 
-        menuBar.add(lookAndFeelMenu);
-        menuBar.add(testMenu);
-        return menuBar;
+    private JMenuItem createLogMessageMenuItem() {
+        JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
+        addLogMessageItem.addActionListener((event) -> {
+            Logger.debug("Новая строка");
+        });
+        return addLogMessageItem;
     }
 
     private void setLookAndFeel(String className) {
