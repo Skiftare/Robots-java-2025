@@ -19,6 +19,7 @@ import java.beans.PropertyVetoException;
 import log.Logger;
 
 import static java.lang.Math.min;
+import static java.lang.Math.round;
 
 /**
  * Что требуется сделать:
@@ -90,13 +91,19 @@ public class MainApplicationFrame extends JFrame {
                 double heightRatio = (double) frame.getHeight() / desktopPane.getHeight();
                 double xRatio = (double) frame.getX() / desktopPane.getWidth();
                 double yRatio = (double) frame.getY() / desktopPane.getHeight();
+                int newWidth = (int) round(width / widthRatio);
+                int newHeight = (int) round(height / heightRatio);
+                int newX = (int) round(width * xRatio);
+                int newY = (int) round(height * yRatio);
 
-                int newWidth = (int) (width * widthRatio);
-                int newHeight = (int) (height * heightRatio);
-                int newX = (int) (width * xRatio);
-                int newY = (int) (height * yRatio);
+                if (newHeight > desktopPane.getHeight() - newY) {
+                    newHeight = desktopPane.getHeight() - newY;
+                }
+                if (newWidth > desktopPane.getWidth() - newX) {
+                    newWidth = desktopPane.getWidth() - newX;
+                }
 
-                frame.setBounds(newX, newY, min(newWidth, desktopPane.getWidth()-newX), min(newHeight, desktopPane.getHeight()-newY));
+                frame.setBounds(newX, newY, newWidth, newHeight);
                 frame.revalidate();
                 frame.repaint();
             }
