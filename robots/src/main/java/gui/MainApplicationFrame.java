@@ -1,7 +1,6 @@
 package gui;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 
 import javax.swing.JDesktopPane;
@@ -19,6 +18,8 @@ import java.beans.PropertyVetoException;
 
 import log.Logger;
 
+import static java.lang.Math.min;
+
 /**
  * Что требуется сделать:
  * 1. Метод создания меню перегружен функционалом и трудно читается.
@@ -26,12 +27,15 @@ import log.Logger;
  */
 public class MainApplicationFrame extends JFrame {
     private final JDesktopPane desktopPane = new JDesktopPane();
+    private final int inset = 50;
 
     public MainApplicationFrame() {
-        //Make the big window be indented 50 pixels from each edge
-        //of the screen.
-        int inset = 50;
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        Rectangle screenBounds = gd.getDefaultConfiguration().getBounds();
+        Dimension screenSize = new Dimension(screenBounds.width, screenBounds.height);
+
+        Logger.debug("Размер экрана: " + screenSize.width + "x" + screenSize.height);
         setBounds(inset, inset,
                 screenSize.width,
                 screenSize.height);
@@ -40,7 +44,7 @@ public class MainApplicationFrame extends JFrame {
 
 
         GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(screenSize.width, screenSize.height);
+        gameWindow.setSize(screenSize.width - inset, screenSize.height - inset);
         addWindow(gameWindow);
 
 
@@ -49,6 +53,7 @@ public class MainApplicationFrame extends JFrame {
 
         setJMenuBar(generateMenuBar());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -81,7 +86,17 @@ public class MainApplicationFrame extends JFrame {
             Logger.debug("Изменяем размеры окон: " + width + "x" + height);
 
             for (JInternalFrame frame : desktopPane.getAllFrames()) {
-                frame.setBounds(0, 0, width, height);
+                double widthRatio = (double) frame.getWidth() / desktopPane.getWidth();
+                double heightRatio = (double) frame.getHeight() / desktopPane.getHeight();
+                double xRatio = (double) frame.getX() / desktopPane.getWidth();
+                double yRatio = (double) frame.getY() / desktopPane.getHeight();
+
+                int newWidth = (int) (width * widthRatio);
+                int newHeight = (int) (height * heightRatio);
+                int newX = (int) (width * xRatio);
+                int newY = (int) (height * yRatio);
+
+                frame.setBounds(newX, newY, min(newWidth, desktopPane.getWidth()-newX), min(newHeight, desktopPane.getHeight()-newY));
                 frame.revalidate();
                 frame.repaint();
             }
