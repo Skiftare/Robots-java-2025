@@ -128,6 +128,8 @@ public class GameVisualizer extends JPanel
 
     private void moveRobot(double velocity, double angularVelocity, double duration)
     {
+        panelHeight = getHeight(); // Update panelHeight with each move
+        panelWidth = getWidth(); // Update panelWidth with each move
         velocity = applyLimits(velocity, 0, maxVelocity);
         angularVelocity = applyLimits(angularVelocity, -maxAngularVelocity, maxAngularVelocity);
 
