@@ -135,7 +135,7 @@ public class GameVisualizer extends JPanel
         double newY = m_robotPositionY + velocity * duration * Math.sin(m_robotDirection);
 
         // Update panel size dynamically whenever it's drawn
-        panelWidth = getWidth() + 100;  // Adjusting panelWidth with a margin
+        panelWidth = getWidth() + 375;  // Adjusting panelWidth with a margin
         panelHeight = getHeight() + 100; // Adjusting panelHeight with a margin
 
         // Handling border overflow by teleporting the robot to the opposite side
