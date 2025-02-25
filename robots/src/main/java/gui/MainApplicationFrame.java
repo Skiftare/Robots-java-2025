@@ -1,44 +1,13 @@
 package gui;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
-
-import javax.swing.JDesktopPane;
-import javax.swing.JFrame;
-import javax.swing.JInternalFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.beans.PropertyVetoException;
-
 import log.Logger;
 
-import static java.lang.Math.min;
-import static java.lang.Math.round;
-
-import log.Logger;
-
+import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-
-import javax.swing.JDesktopPane;
-
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.beans.PropertyVetoException;
+import java.awt.event.KeyEvent;
 
-import log.Logger;
-
-import static java.lang.Math.min;
 import static java.lang.Math.round;
 
 /**
