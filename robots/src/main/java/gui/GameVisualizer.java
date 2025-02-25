@@ -1,5 +1,8 @@
 package gui;
 
+import model.Robot;
+import model.Target;
+
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Graphics;
@@ -21,6 +24,11 @@ public class GameVisualizer extends JPanel
     {
         return new Timer("events generator", true);
     }
+
+    private final Timer timer = new Timer("events generator", true);
+    private final Robot robot = new Robot(100, 100, 0);
+    private final Target target = new Target(150, 100);
+
 
     private volatile double m_robotPositionX = 100;
     private volatile double m_robotPositionY = 100;
