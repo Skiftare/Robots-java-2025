@@ -16,7 +16,6 @@ import java.util.TimerTask;
 import javax.swing.JPanel;
 
 public class GameVisualizer extends JPanel {
-    private final Timer timer;
     private final Robot robot;
     private final Target target;
 
@@ -25,7 +24,7 @@ public class GameVisualizer extends JPanel {
     private boolean isPanelInitialized = false;
 
     public GameVisualizer() {
-        this.timer = new Timer("events generator", true);
+        Timer timer = new Timer("events generator", true);
         this.robot = new Robot(100, 100, 0);
         this.target = new Target(150, 100);
 
