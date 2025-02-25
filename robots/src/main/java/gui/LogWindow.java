@@ -12,8 +12,8 @@ import log.LogEntry;
 import log.LogWindowSource;
 
 public class LogWindow extends JInternalFrame implements LogChangeListener {
-    private LogWindowSource m_logSource;
-    private TextArea m_logContent;
+    LogWindowSource m_logSource;
+    TextArea m_logContent;
 
     private final int width = 400;
     private final int height = 600;
@@ -32,7 +32,7 @@ public class LogWindow extends JInternalFrame implements LogChangeListener {
         updateLogContent();
     }
 
-    private void updateLogContent() {
+    void updateLogContent() {
         StringBuilder content = new StringBuilder();
         for (LogEntry entry : m_logSource.all()) {
             content.append(entry.getMessage()).append("\n");
