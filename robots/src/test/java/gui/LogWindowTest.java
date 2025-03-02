@@ -1,13 +1,15 @@
 package gui;
 
-// After
 import log.LogChangeListener;
 import log.LogEntry;
 import log.LogWindowSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
 
 import java.awt.*;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
