@@ -8,7 +8,7 @@ import java.awt.Point;
 import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 public class GameVisualizerTest {
     private GameVisualizer gameVisualizer;
@@ -49,10 +49,8 @@ public class GameVisualizerTest {
         robot.move(1000, 0, 10, gameVisualizer.getWidth() + 375, gameVisualizer.getHeight() + 100);
 
         assertTrue(robot.getPositionX() >= 0 &&
-                        robot.getPositionX() <= gameVisualizer.getWidth() + 375,
-                "Robot X should wrap around");
+                        robot.getPositionX() <= gameVisualizer.getWidth() + 375);
         assertTrue(robot.getPositionY() >= 0 &&
-                        robot.getPositionY() <= gameVisualizer.getHeight() + 100,
-                "Robot Y should wrap around");
+                        robot.getPositionY() <= gameVisualizer.getHeight() + 100);
     }
 }
