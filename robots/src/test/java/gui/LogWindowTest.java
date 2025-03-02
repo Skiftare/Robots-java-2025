@@ -1,16 +1,16 @@
 package gui;
 
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
-import java.awt.TextArea;
-import java.util.List;
-
+// After
 import log.LogChangeListener;
 import log.LogEntry;
 import log.LogWindowSource;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.awt.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class LogWindowTest {
 

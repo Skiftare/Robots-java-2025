@@ -2,7 +2,7 @@ package model;
 
 import org.junit.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class TargetTest {
     private Target target;
