@@ -4,15 +4,7 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 
-import javax.swing.JDesktopPane;
-import javax.swing.JFrame;
-import javax.swing.JInternalFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.beans.PropertyVetoException;
@@ -80,7 +72,7 @@ public class MainApplicationFrame extends JFrame {
 
     }
 
-    private void resizeInternalFrames() {
+    void resizeInternalFrames() {
         SwingUtilities.invokeLater(() -> {
             int width = desktopPane.getWidth();
             int height = desktopPane.getHeight();
@@ -140,7 +132,7 @@ public class MainApplicationFrame extends JFrame {
     }
 
 
-    private JMenuBar generateMenuBar() {
+    JMenuBar generateMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createLookAndFeelMenu());
         menuBar.add(createTestMenu());
@@ -157,7 +149,7 @@ public class MainApplicationFrame extends JFrame {
         return lookAndFeelMenu;
     }
 
-    private JMenuItem createSystemLookAndFeelMenuItem() {
+    JMenuItem createSystemLookAndFeelMenuItem() {
         JMenuItem systemLookAndFeel = new JMenuItem("Системная схема", KeyEvent.VK_S);
         systemLookAndFeel.addActionListener((event) -> {
             setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -166,7 +158,7 @@ public class MainApplicationFrame extends JFrame {
         return systemLookAndFeel;
     }
 
-    private JMenuItem createCrossPlatformLookAndFeelMenuItem() {
+    JMenuItem createCrossPlatformLookAndFeelMenuItem() {
         JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
         crossplatformLookAndFeel.addActionListener((event) -> {
             setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -184,7 +176,7 @@ public class MainApplicationFrame extends JFrame {
         return testMenu;
     }
 
-    private JMenuItem createLogMessageMenuItem() {
+    JMenuItem createLogMessageMenuItem() {
         JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
         addLogMessageItem.addActionListener((event) -> {
             Logger.debug("Новая строка");
@@ -200,5 +192,9 @@ public class MainApplicationFrame extends JFrame {
                  | IllegalAccessException | UnsupportedLookAndFeelException e) {
             Logger.error("Ошибка при установке схемы оформления: " + e.getMessage());
         }
+    }
+
+    public JDesktopPane getDesktopPane() {
+        return desktopPane;
     }
 }
