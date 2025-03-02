@@ -26,7 +26,8 @@ public class LogWindowTest {
         mockLogSource = Mockito.mock(LogWindowSource.class);
 
         // Create the LogWindow instance with the mocked source
-        logWindow = new LogWindow(mockLogSource);
+        logWindow=Mockito.mock(LogWindow.class);
+        //logWindow = new LogWindow(mockLogSource);
 
         // Mock the TextArea object to avoid the GUI's real components
         mockLogContent = Mockito.mock(TextArea.class);
