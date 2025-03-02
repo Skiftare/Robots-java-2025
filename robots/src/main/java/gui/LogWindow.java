@@ -11,19 +11,20 @@ import log.LogChangeListener;
 import log.LogEntry;
 import log.LogWindowSource;
 
-public class LogWindow extends JInternalFrame implements LogChangeListener
-{
-    private LogWindowSource m_logSource;
-    private TextArea m_logContent;
+public class LogWindow extends JInternalFrame implements LogChangeListener {
+    LogWindowSource m_logSource;
+    TextArea m_logContent;
 
-    public LogWindow(LogWindowSource logSource) 
-    {
+    private final int width = 400;
+    private final int height = 600;
+
+    public LogWindow(LogWindowSource logSource) {
         super("Протокол работы", true, true, true, true);
         m_logSource = logSource;
         m_logSource.registerListener(this);
         m_logContent = new TextArea("");
-        m_logContent.setSize(200, 500);
-        
+        m_logContent.setSize(width, height);
+
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_logContent, BorderLayout.CENTER);
         getContentPane().add(panel);
@@ -31,20 +32,17 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
         updateLogContent();
     }
 
-    private void updateLogContent()
-    {
+    void updateLogContent() {
         StringBuilder content = new StringBuilder();
-        for (LogEntry entry : m_logSource.all())
-        {
+        for (LogEntry entry : m_logSource.all()) {
             content.append(entry.getMessage()).append("\n");
         }
         m_logContent.setText(content.toString());
         m_logContent.invalidate();
     }
-    
+
     @Override
-    public void onLogChanged()
-    {
+    public void onLogChanged() {
         EventQueue.invokeLater(this::updateLogContent);
     }
 }
