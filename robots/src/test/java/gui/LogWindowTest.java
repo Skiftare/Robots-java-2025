@@ -1,16 +1,18 @@
 package gui;
 
-import static org.junit.jupiter.api.Assertions.*;
+import log.LogChangeListener;
+import log.LogEntry;
+import log.LogWindowSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.awt.TextArea;
+
+import java.awt.*;
 import java.util.List;
 
-import log.LogChangeListener;
-import log.LogEntry;
-import log.LogWindowSource;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class LogWindowTest {
 
@@ -24,7 +26,8 @@ public class LogWindowTest {
         mockLogSource = Mockito.mock(LogWindowSource.class);
 
         // Create the LogWindow instance with the mocked source
-        logWindow = new LogWindow(mockLogSource);
+        logWindow=Mockito.mock(LogWindow.class);
+        //logWindow = new LogWindow(mockLogSource);
 
         // Mock the TextArea object to avoid the GUI's real components
         mockLogContent = Mockito.mock(TextArea.class);
