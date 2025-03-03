@@ -1,19 +1,17 @@
 package gui;
 
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
-import java.awt.TextArea;
-
-import javax.swing.JInternalFrame;
-import javax.swing.JPanel;
-
 import log.LogChangeListener;
 import log.LogEntry;
 import log.LogWindowSource;
 
+import javax.swing.*;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
+import java.awt.*;
+
 public class LogWindow extends JInternalFrame implements LogChangeListener {
-    LogWindowSource m_logSource;
-    TextArea m_logContent;
+    private LogWindowSource m_logSource;
+    private TextArea m_logContent;
 
     private final int width = 400;
     private final int height = 600;
@@ -29,10 +27,28 @@ public class LogWindow extends JInternalFrame implements LogChangeListener {
         panel.add(m_logContent, BorderLayout.CENTER);
         getContentPane().add(panel);
         pack();
+
+        // Add listener to detect when the frame is closed
+        addInternalFrameListener(new InternalFrameAdapter() {
+            @Override
+            public void internalFrameClosed(InternalFrameEvent e) {
+                unregisterFromLogSource();
+            }
+        });
+
         updateLogContent();
     }
 
+    private void unregisterFromLogSource() {
+        if (m_logSource != null) {
+            m_logSource.unregisterListener(this);
+            m_logSource = null;  // Allow GC to reclaim the reference
+        }
+    }
+
     void updateLogContent() {
+        if (m_logSource == null) return;
+
         StringBuilder content = new StringBuilder();
         for (LogEntry entry : m_logSource.all()) {
             content.append(entry.getMessage()).append("\n");
@@ -44,5 +60,11 @@ public class LogWindow extends JInternalFrame implements LogChangeListener {
     @Override
     public void onLogChanged() {
         EventQueue.invokeLater(this::updateLogContent);
+    }
+
+    @Override
+    public void dispose() {
+        unregisterFromLogSource();
+        super.dispose();
     }
 }

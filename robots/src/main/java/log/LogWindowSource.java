@@ -3,7 +3,6 @@ package log;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.ListIterator;
 
 /**
  * слушатели удаляются из списка m_listeners в методе unregisterListener
@@ -11,9 +10,8 @@ import java.util.ListIterator;
  */
 public class LogWindowSource
 {
-    private int m_iQueueLength;
-
-    private LinkedList<LogEntry> m_messages; // using LinkedList to delete old messages
+    private final int m_iQueueLength;
+    private final LinkedList<LogEntry> m_messages; // using LinkedList to delete old messages
     private final ArrayList<LogChangeListener> m_listeners;
     private volatile LogChangeListener[] m_activeListeners;
 
@@ -45,51 +43,69 @@ public class LogWindowSource
     public void append(LogLevel logLevel, String strMessage)
     {
         LogEntry entry = new LogEntry(logLevel, strMessage);
-
-        //adding new message deleting excess
-        if (m_messages.size() >= m_iQueueLength) {
-            m_messages.poll();
+        synchronized(m_messages) {
+            if (m_messages.size() >= m_iQueueLength) {
+                m_messages.poll();
+            }
+            m_messages.add(entry);
         }
-        m_messages.add(entry);
 
-        //defining listeners
-        LogChangeListener [] activeListeners = m_activeListeners;
+        // Defining listeners
+        LogChangeListener[] activeListeners = m_activeListeners;
         if (activeListeners == null)
         {
             synchronized (m_listeners)
             {
                 if (m_activeListeners == null)
                 {
-                    activeListeners = m_listeners.toArray(new LogChangeListener [0]);
+                    activeListeners = m_listeners.toArray(new LogChangeListener[0]);
                     m_activeListeners = activeListeners;
                 }
             }
         }
-
-        //notifying listeners
+        assert activeListeners != null;
         for (LogChangeListener listener : activeListeners)
         {
             listener.onLogChanged();
         }
     }
 
+    public void clear() {
+        synchronized(m_messages) {
+            m_messages.clear();
+        }
+
+        LogChangeListener[] activeListeners = m_activeListeners;
+        if (activeListeners != null) {
+            for (LogChangeListener listener : activeListeners) {
+                listener.onLogChanged();
+            }
+        }
+    }
+
     public int size()
     {
-        return m_messages.size();
+        synchronized(m_messages) {
+            return m_messages.size();
+        }
     }
 
     public Iterable<LogEntry> range(int startFrom, int count)
     {
-        if (startFrom < 0 || startFrom >= m_messages.size())
-        {
-            return Collections.emptyList();
+        synchronized(m_messages) {
+            if (startFrom < 0 || startFrom >= m_messages.size())
+            {
+                return Collections.emptyList();
+            }
+            int indexTo = Math.min(startFrom + count, m_messages.size());
+            return new ArrayList<>(m_messages.subList(startFrom, indexTo));
         }
-        int indexTo = Math.min(startFrom + count, m_messages.size());
-        return m_messages.subList(startFrom, indexTo);
     }
 
     public Iterable<LogEntry> all()
     {
-        return m_messages;
+        synchronized(m_messages) {
+            return new ArrayList<>(m_messages);
+        }
     }
 }
