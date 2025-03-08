@@ -5,6 +5,7 @@ import java.awt.*;
 
 public class RobotsProgram {
     public static void main(String[] args) {
+        System.setProperty("file.encoding", "UTF-8");
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
 //        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");

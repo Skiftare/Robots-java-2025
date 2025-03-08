@@ -1,10 +1,10 @@
 package gui.system.closing;
 
+import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
 import lombok.Getter;
 
-import javax.swing.JInternalFrame;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 @Getter
 public class DefaultFrameClosingStrategy implements FrameClosingStrategy, LocaleChangeListener {

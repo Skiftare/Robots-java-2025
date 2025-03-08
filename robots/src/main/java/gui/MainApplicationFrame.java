@@ -22,7 +22,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     private int oldWidth = -1;
     private int oldHeight = -1;
 
-    private ApplicationMenu applicationMenu;
+    private final ApplicationMenu applicationMenu;
 
     public MainApplicationFrame() {
         LocalizationManager.getInstance().addListener(this);
