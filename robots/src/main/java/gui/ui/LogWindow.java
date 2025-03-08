@@ -1,4 +1,4 @@
-package gui;
+package gui.ui;
 
 import log.LogChangeListener;
 import log.LogEntry;

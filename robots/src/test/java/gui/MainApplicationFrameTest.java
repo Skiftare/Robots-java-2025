@@ -1,11 +1,12 @@
 package gui;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import gui.ui.LogWindow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
 
 public class MainApplicationFrameTest {

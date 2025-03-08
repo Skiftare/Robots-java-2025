@@ -1,7 +1,7 @@
 package gui;
 
+import gui.ui.LogWindow;
 import log.LogChangeListener;
-import log.LogEntry;
 import log.LogLevel;
 import log.LogWindowSource;
 import org.junit.After;

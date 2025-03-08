@@ -1,5 +1,6 @@
-package gui;
+package gui.system;
 
+import gui.MainApplicationFrame;
 import log.Logger;
 
 import javax.swing.*;

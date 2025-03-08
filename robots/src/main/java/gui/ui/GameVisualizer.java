@@ -1,4 +1,4 @@
-package gui;
+package gui.ui;
 
 import model.Robot;
 import model.Target;
