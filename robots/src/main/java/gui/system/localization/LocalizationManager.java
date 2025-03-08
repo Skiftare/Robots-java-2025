@@ -14,7 +14,10 @@ public class LocalizationManager {
     private static LocalizationManager instance;
 
     @Getter
-    private Language currentLanguage = Language.RUSSIAN;
+    private Language currentLanguage = Arrays.stream(Language.values())
+            .filter(l -> l.getLocale().getLanguage().equals(Locale.getDefault().getLanguage()))
+            .findFirst()
+            .orElse(Language.ENGLISH);
     private ResourceBundle bundle;
     private final List<LocaleChangeListener> listeners = new ArrayList<>();
 
@@ -75,4 +78,5 @@ public class LocalizationManager {
             listener.localeChanged();
         }
     }
+
 }
