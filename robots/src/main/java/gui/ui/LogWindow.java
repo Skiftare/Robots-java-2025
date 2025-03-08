@@ -42,7 +42,7 @@ public class LogWindow extends JInternalFrame implements LogChangeListener {
     private void unregisterFromLogSource() {
         if (m_logSource != null) {
             m_logSource.unregisterListener(this);
-            m_logSource = null;  // Allow GC to reclaim the reference
+            m_logSource = null;
         }
     }
 

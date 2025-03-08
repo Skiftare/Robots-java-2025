@@ -1,26 +1,25 @@
 package gui.system.closing;
 
-
+import gui.system.localization.LocalizationManager;
 import lombok.Getter;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JOptionPane;
 
-/**
- * Стандартная стратегия с диалоговым окном подтверждения
- */
 @Getter
-public class DefaultFrameClosingStrategy implements FrameClosingStrategy {
-    private final String message;
-    private final String title;
-
-    public DefaultFrameClosingStrategy(String message, String title) {
-        this.message = message;
-        this.title = title;
-    }
+public class DefaultFrameClosingStrategy implements FrameClosingStrategy, LocaleChangeListener {
+    private String message;
+    private String title;
 
     public DefaultFrameClosingStrategy() {
-        this("Вы уверены, что хотите закрыть это окно?", "Подтверждение закрытия");
+        LocalizationManager.getInstance().addListener(this);
+        updateStrings();
+    }
+
+    public DefaultFrameClosingStrategy(String messageKey, String titleKey) {
+        LocalizationManager.getInstance().addListener(this);
+        this.message = LocalizationManager.getInstance().getString(messageKey);
+        this.title = LocalizationManager.getInstance().getString(titleKey);
     }
 
     @Override
@@ -32,5 +31,15 @@ public class DefaultFrameClosingStrategy implements FrameClosingStrategy {
                 JOptionPane.YES_NO_OPTION
         );
         return result == JOptionPane.YES_OPTION;
+    }
+
+    @Override
+    public void localeChanged() {
+        updateStrings();
+    }
+
+    private void updateStrings() {
+        this.message = LocalizationManager.getInstance().getString("close.confirm");
+        this.title = LocalizationManager.getInstance().getString("close.confirm.title");
     }
 }

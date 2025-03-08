@@ -1,10 +1,14 @@
 package gui;
 
+import gui.system.ApplicationMenu;
 import gui.system.closing.DefaultFrameClosingStrategy;
 import gui.system.closing.FrameCloseConfirmationDecorator;
+import gui.system.localization.LocaleChangeListener;
+import gui.system.localization.LocalizationManager;
 import gui.ui.GameWindow;
 import gui.ui.LogWindow;
 import log.Logger;
+import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,42 +16,45 @@ import java.awt.event.*;
 
 import static java.lang.Math.round;
 
-public class MainApplicationFrame extends JFrame {
+public class MainApplicationFrame extends JFrame implements LocaleChangeListener {
+    @Getter
     private final JDesktopPane desktopPane = new JDesktopPane();
     private int oldWidth = -1;
     private int oldHeight = -1;
 
+    private ApplicationMenu applicationMenu;
 
     public MainApplicationFrame() {
-        //Make the big window be indented 50 pixels from each edge
-        //of the screen.
+        LocalizationManager.getInstance().addListener(this);
+
         int inset = 50;
         GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         Rectangle screenBounds = gd.getDefaultConfiguration().getBounds();
         Dimension screenSize = new Dimension(screenBounds.width, screenBounds.height);
-        setBounds(inset, inset,
-                screenSize.width,
-                screenSize.height);
+        setBounds(inset, inset, screenSize.width, screenSize.height);
 
         setContentPane(desktopPane);
-
 
         GameWindow gameWindow = new GameWindow();
         gameWindow.setSize(screenSize.width, screenSize.height);
         addWindow(gameWindow);
 
-
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
-        setJMenuBar(generateMenuBar());
+        // Create and set menu bar
+        applicationMenu = new ApplicationMenu(this);
+        setJMenuBar(applicationMenu);
+
+        updateTitle();
+
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 DefaultFrameClosingStrategy closingStrategy = new DefaultFrameClosingStrategy(
-                        "Вы уверены, что хотите закрыть приложение?",
-                        "Подтверждение выхода");
+                        LocalizationManager.getInstance().getString("close.app.confirm"),
+                        LocalizationManager.getInstance().getString("close.app.confirm.title"));
 
                 int result = JOptionPane.showConfirmDialog(
                         MainApplicationFrame.this,
@@ -68,22 +75,19 @@ public class MainApplicationFrame extends JFrame {
                 resizeInternalFrames();
             }
         });
-
     }
 
     void resizeInternalFrames() {
+        // Existing resize code remains the same
         SwingUtilities.invokeLater(() -> {
             int width = desktopPane.getWidth();
             int height = desktopPane.getHeight();
 
             if (width == 0 || height == 0 || oldWidth <= 0 || oldHeight <= 0) {
-                Logger.debug("Ошибка: размер desktopPane некорректен или ещё не инициализирован!");
                 oldWidth = width;
                 oldHeight = height;
                 return;
             }
-
-            Logger.debug("Изменяем размеры окон: " + width + "x" + height);
 
             for (JInternalFrame frame : desktopPane.getAllFrames()) {
                 double widthRatio = (double) frame.getWidth() / oldWidth;
@@ -96,7 +100,6 @@ public class MainApplicationFrame extends JFrame {
                 int newX = (int) round(width * xRatio);
                 int newY = (int) round(height * yRatio);
 
-                // Ограничения, чтобы окна не выходили за границы
                 newWidth = Math.min(newWidth, width - newX);
                 newHeight = Math.min(newHeight, height - newY);
 
@@ -105,7 +108,6 @@ public class MainApplicationFrame extends JFrame {
                 frame.repaint();
             }
 
-            // Сохраняем новые размеры
             oldWidth = width;
             oldHeight = height;
 
@@ -114,14 +116,13 @@ public class MainApplicationFrame extends JFrame {
         });
     }
 
-
     protected LogWindow createLogWindow() {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
         logWindow.setLocation(10, 10);
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
-        Logger.debug("Протокол работает");
+        Logger.debug(LocalizationManager.getInstance().getString("log.message.system.health"));
         return logWindow;
     }
 
@@ -131,70 +132,15 @@ public class MainApplicationFrame extends JFrame {
         frame.setVisible(true);
     }
 
-
-    JMenuBar generateMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
-        menuBar.add(createLookAndFeelMenu());
-        menuBar.add(createTestMenu());
-        return menuBar;
+    private void updateTitle() {
+        setTitle(LocalizationManager.getInstance().getString("application.title"));
     }
 
-    private JMenu createLookAndFeelMenu() {
-        JMenu lookAndFeelMenu = new JMenu("Режим отображения");
-        lookAndFeelMenu.setMnemonic(KeyEvent.VK_V);
-        lookAndFeelMenu.getAccessibleContext().setAccessibleDescription("Управление режимом отображения приложения");
-
-        lookAndFeelMenu.add(createSystemLookAndFeelMenuItem());
-        lookAndFeelMenu.add(createCrossPlatformLookAndFeelMenuItem());
-        return lookAndFeelMenu;
-    }
-
-    JMenuItem createSystemLookAndFeelMenuItem() {
-        JMenuItem systemLookAndFeel = new JMenuItem("Системная схема", KeyEvent.VK_S);
-        systemLookAndFeel.addActionListener((event) -> {
-            setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            this.invalidate();
-        });
-        return systemLookAndFeel;
-    }
-
-    JMenuItem createCrossPlatformLookAndFeelMenuItem() {
-        JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
-        crossplatformLookAndFeel.addActionListener((event) -> {
-            setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            this.invalidate();
-        });
-        return crossplatformLookAndFeel;
-    }
-
-    private JMenu createTestMenu() {
-        JMenu testMenu = new JMenu("Тесты");
-        testMenu.setMnemonic(KeyEvent.VK_T);
-        testMenu.getAccessibleContext().setAccessibleDescription("Тестовые команды");
-
-        testMenu.add(createLogMessageMenuItem());
-        return testMenu;
-    }
-
-    JMenuItem createLogMessageMenuItem() {
-        JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
-        addLogMessageItem.addActionListener((event) -> {
-            Logger.debug("Новая строка");
-        });
-        return addLogMessageItem;
-    }
-
-    private void setLookAndFeel(String className) {
-        try {
-            UIManager.setLookAndFeel(className);
-            SwingUtilities.updateComponentTreeUI(this);
-        } catch (ClassNotFoundException | InstantiationException
-                 | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            Logger.error("Ошибка при установке схемы оформления: " + e.getMessage());
-        }
-    }
-
-    public JDesktopPane getDesktopPane() {
-        return desktopPane;
+    @Override
+    public void localeChanged() {
+        updateTitle();
+        applicationMenu.updateLocalization();
+        // Force UI refresh
+        SwingUtilities.updateComponentTreeUI(this);
     }
 }
