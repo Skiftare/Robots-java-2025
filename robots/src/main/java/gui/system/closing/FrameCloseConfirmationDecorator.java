@@ -34,7 +34,7 @@ public class FrameCloseConfirmationDecorator {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (strategy.confirmClosing(frame)) {
-                    frame.dispose();
+                    System.exit(0);
                 }
             }
         });

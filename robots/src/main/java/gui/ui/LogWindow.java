@@ -31,7 +31,6 @@ public class LogWindow extends JInternalFrame implements LogChangeListener, Loca
         getContentPane().add(panel);
         pack();
 
-        // Add listener to detect when the frame is closed
         addInternalFrameListener(new InternalFrameAdapter() {
             @Override
             public void internalFrameClosed(InternalFrameEvent e) {
