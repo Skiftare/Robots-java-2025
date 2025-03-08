@@ -1,15 +1,16 @@
 package gui.system.closing;
 
 
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Assume;
 
 import javax.swing.*;
 import javax.swing.event.InternalFrameEvent;
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class CloseConfirmationTest {
 
@@ -26,6 +27,12 @@ public class CloseConfirmationTest {
 
         @Override
         public boolean confirmClosing(JInternalFrame frame) {
+            confirmationCalled = true;
+            return shouldClose;
+        }
+
+        @Override
+        public boolean confirmClosing(JFrame frame) {
             confirmationCalled = true;
             return shouldClose;
         }

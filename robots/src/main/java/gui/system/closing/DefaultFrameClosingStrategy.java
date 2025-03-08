@@ -10,28 +10,79 @@ import javax.swing.*;
 public class DefaultFrameClosingStrategy implements FrameClosingStrategy, LocaleChangeListener {
     private String message;
     private String title;
+    private String yesButtonText;
+    private String noButtonText;
 
     public DefaultFrameClosingStrategy() {
         LocalizationManager.getInstance().addListener(this);
         updateStrings();
     }
 
-    public DefaultFrameClosingStrategy(String messageKey, String titleKey) {
+    public DefaultFrameClosingStrategy(String incomeMessage, String incomeTitle) {
         LocalizationManager.getInstance().addListener(this);
-        this.message = LocalizationManager.getInstance().getString(messageKey);
-        this.title = LocalizationManager.getInstance().getString(titleKey);
+        this.message = incomeMessage;
+        this.title = incomeTitle;
+        this.yesButtonText = LocalizationManager.getInstance().getString("system.yes");
+        this.noButtonText = LocalizationManager.getInstance().getString("system.no");
+
+    }
+
+    private void fetchLocalizationButtons() {
+        this.yesButtonText = LocalizationManager.getInstance().getString("system.yes");
+        this.noButtonText = LocalizationManager.getInstance().getString("system.no");
+
     }
 
     @Override
     public boolean confirmClosing(JInternalFrame frame) {
-        int result = JOptionPane.showConfirmDialog(
+        if (yesButtonText == null || noButtonText == null) {
+            fetchLocalizationButtons();
+        }
+        String yes = (yesButtonText != null) ? yesButtonText : "Yes";
+        String no = (noButtonText != null) ? noButtonText : "No";
+
+        Object[] options = {yes, no};
+
+        int result = JOptionPane.showOptionDialog(
                 frame,
                 message,
                 title,
-                JOptionPane.YES_NO_OPTION
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[1]
         );
-        return result == JOptionPane.YES_OPTION;
+
+        return result == 0;
     }
+
+    @Override
+    public boolean confirmClosing(JFrame frame) {
+        if (yesButtonText == null || noButtonText == null) {
+            fetchLocalizationButtons();
+        }
+        String yes = (yesButtonText != null) ? yesButtonText : "Yes";
+        String no = (noButtonText != null) ? noButtonText : "No";
+
+        Object[] options = {yes, no};
+
+        int result = JOptionPane.showOptionDialog(
+                frame,
+                message,
+                title,
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[1]
+        );
+
+        return result == 0;
+    }
+
+
+
 
     @Override
     public void localeChanged() {
@@ -41,5 +92,7 @@ public class DefaultFrameClosingStrategy implements FrameClosingStrategy, Locale
     private void updateStrings() {
         this.message = LocalizationManager.getInstance().getString("close.confirm");
         this.title = LocalizationManager.getInstance().getString("close.confirm.title");
+        this.yesButtonText = LocalizationManager.getInstance().getString("system.yes");
+        this.noButtonText = LocalizationManager.getInstance().getString("system.no");
     }
 }

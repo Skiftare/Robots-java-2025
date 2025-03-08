@@ -12,7 +12,8 @@ import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 import static java.lang.Math.round;
 
@@ -21,8 +22,6 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     private final JDesktopPane desktopPane = new JDesktopPane();
     private int oldWidth = -1;
     private int oldHeight = -1;
-
-    private final ApplicationMenu applicationMenu;
 
     public MainApplicationFrame() {
         LocalizationManager.getInstance().addListener(this);
@@ -42,32 +41,19 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
-        // Create and set menu bar
-        applicationMenu = new ApplicationMenu(this);
+        ApplicationMenu applicationMenu = new ApplicationMenu(this);
         setJMenuBar(applicationMenu);
 
         updateTitle();
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                DefaultFrameClosingStrategy closingStrategy = new DefaultFrameClosingStrategy(
+        FrameCloseConfirmationDecorator.addCloseConfirmation(
+                MainApplicationFrame.this,
+                new DefaultFrameClosingStrategy(
                         LocalizationManager.getInstance().getString("close.app.confirm"),
-                        LocalizationManager.getInstance().getString("close.app.confirm.title"));
-
-                int result = JOptionPane.showConfirmDialog(
-                        MainApplicationFrame.this,
-                        closingStrategy.getMessage(),
-                        closingStrategy.getTitle(),
-                        JOptionPane.YES_NO_OPTION
-                );
-
-                if (result == JOptionPane.YES_OPTION) {
-                    System.exit(0);
-                }
-            }
-        });
+                        LocalizationManager.getInstance().getString("close.app.confirm.title")
+                )
+        );
 
         addComponentListener(new ComponentAdapter() {
             @Override
@@ -78,7 +64,6 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     }
 
     void resizeInternalFrames() {
-        // Existing resize code remains the same
         SwingUtilities.invokeLater(() -> {
             int width = desktopPane.getWidth();
             int height = desktopPane.getHeight();
@@ -139,8 +124,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     @Override
     public void localeChanged() {
         updateTitle();
-        applicationMenu.updateLocalization();
-        // Force UI refresh
+
         SwingUtilities.updateComponentTreeUI(this);
     }
 }

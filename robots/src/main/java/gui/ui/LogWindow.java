@@ -1,5 +1,7 @@
 package gui.ui;
 
+import gui.system.localization.LocaleChangeListener;
+import gui.system.localization.LocalizationManager;
 import log.LogChangeListener;
 import log.LogEntry;
 import log.LogWindowSource;
@@ -9,7 +11,7 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import java.awt.*;
 
-public class LogWindow extends JInternalFrame implements LogChangeListener {
+public class LogWindow extends JInternalFrame implements LogChangeListener, LocaleChangeListener {
     private LogWindowSource m_logSource;
     private TextArea m_logContent;
 
@@ -17,11 +19,12 @@ public class LogWindow extends JInternalFrame implements LogChangeListener {
     private final int height = 600;
 
     public LogWindow(LogWindowSource logSource) {
-        super("Протокол работы", true, true, true, true);
+        super(LocalizationManager.getInstance().getString("log.window.title"), true, true, true, true);
         m_logSource = logSource;
         m_logSource.registerListener(this);
         m_logContent = new TextArea("");
         m_logContent.setSize(width, height);
+        LocalizationManager.getInstance().addListener(this);
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_logContent, BorderLayout.CENTER);
@@ -64,7 +67,13 @@ public class LogWindow extends JInternalFrame implements LogChangeListener {
 
     @Override
     public void dispose() {
+        LocalizationManager.getInstance().removeListener(this);
         unregisterFromLogSource();
         super.dispose();
+    }
+
+    @Override
+    public void localeChanged() {
+        this.setTitle(LocalizationManager.getInstance().getString("log.window.title"));
     }
 }

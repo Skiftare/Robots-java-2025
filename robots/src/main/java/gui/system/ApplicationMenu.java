@@ -2,20 +2,25 @@ package gui.system;
 
 import gui.MainApplicationFrame;
 import gui.system.localization.Language;
+import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
 import log.Logger;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
 
-public class ApplicationMenu extends JMenuBar {
+public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private final MainApplicationFrame mainFrame;
     private JMenu lookAndFeelMenu;
+    private JMenuItem systemLookAndFeelMenuItem;
+    private JMenuItem crossPlatformLookAndFeelMenuItem;
     private JMenu testMenu;
+    private JMenuItem logMessageMenuItem;
     private JMenu languageMenu;
 
     public ApplicationMenu(MainApplicationFrame mainFrame) {
         this.mainFrame = mainFrame;
+        LocalizationManager.getInstance().addListener(this);
         buildMenu();
     }
 
@@ -32,8 +37,11 @@ public class ApplicationMenu extends JMenuBar {
                 LocalizationManager.getInstance().getString("menu.view.desc")
         );
 
-        lookAndFeelMenu.add(createSystemLookAndFeelMenuItem());
-        lookAndFeelMenu.add(createCrossPlatformLookAndFeelMenuItem());
+        systemLookAndFeelMenuItem = createSystemLookAndFeelMenuItem();
+        crossPlatformLookAndFeelMenuItem = createCrossPlatformLookAndFeelMenuItem();
+
+        lookAndFeelMenu.add(systemLookAndFeelMenuItem);
+        lookAndFeelMenu.add(crossPlatformLookAndFeelMenuItem);
         return lookAndFeelMenu;
     }
 
@@ -61,7 +69,8 @@ public class ApplicationMenu extends JMenuBar {
         testMenu.getAccessibleContext().setAccessibleDescription(
                 LocalizationManager.getInstance().getString("menu.test.desc"));
 
-        testMenu.add(createLogMessageMenuItem());
+        logMessageMenuItem = createLogMessageMenuItem();
+        testMenu.add(logMessageMenuItem);
         return testMenu;
     }
 
@@ -100,19 +109,36 @@ public class ApplicationMenu extends JMenuBar {
         }
     }
 
-    public void updateLocalization() {
+
+
+    @Override
+    public void localeChanged() {
         if (lookAndFeelMenu != null) {
             lookAndFeelMenu.setText(LocalizationManager.getInstance().getString("menu.view"));
             lookAndFeelMenu.getAccessibleContext().setAccessibleDescription(
                     LocalizationManager.getInstance().getString("menu.view.desc"));
+
+            if (systemLookAndFeelMenuItem != null) {
+                systemLookAndFeelMenuItem.setText(LocalizationManager.getInstance().getString("menu.view.system"));
+            }
+
+            if (crossPlatformLookAndFeelMenuItem != null) {
+                crossPlatformLookAndFeelMenuItem.setText(LocalizationManager.getInstance().getString("menu.view.cross-platform"));
+            }
         }
 
+        // Update Test menu
         if (testMenu != null) {
             testMenu.setText(LocalizationManager.getInstance().getString("menu.test"));
             testMenu.getAccessibleContext().setAccessibleDescription(
                     LocalizationManager.getInstance().getString("menu.test.desc"));
+
+            if (logMessageMenuItem != null) {
+                logMessageMenuItem.setText(LocalizationManager.getInstance().getString("log.test.message"));
+            }
         }
 
+        // Update Language menu
         if (languageMenu != null) {
             languageMenu.setText(LocalizationManager.getInstance().getString("menu.language"));
             languageMenu.getAccessibleContext().setAccessibleDescription(
