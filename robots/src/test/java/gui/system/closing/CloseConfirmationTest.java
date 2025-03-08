@@ -17,10 +17,10 @@ public class CloseConfirmationTest {
     private JInternalFrame testFrame;
     private boolean confirmationCalled;
 
-    class TestClosingStrategy implements ClosingStrategy {
+    class TestFrameClosingStrategy implements FrameClosingStrategy {
         private final boolean shouldClose;
 
-        public TestClosingStrategy(boolean shouldClose) {
+        public TestFrameClosingStrategy(boolean shouldClose) {
             this.shouldClose = shouldClose;
         }
 
@@ -42,7 +42,7 @@ public class CloseConfirmationTest {
 
     @Test
     public void testClosingConfirmed() {
-        CloseConfirmationDecorator.addCloseConfirmation(testFrame, new TestClosingStrategy(true));
+        FrameCloseConfirmationDecorator.addCloseConfirmation(testFrame, new TestFrameClosingStrategy(true));
         desktop.add(testFrame);
         testFrame.setVisible(true);
 
@@ -55,7 +55,7 @@ public class CloseConfirmationTest {
 
     @Test
     public void testClosingCancelled() {
-        CloseConfirmationDecorator.addCloseConfirmation(testFrame, new TestClosingStrategy(false));
+        FrameCloseConfirmationDecorator.addCloseConfirmation(testFrame, new TestFrameClosingStrategy(false));
         desktop.add(testFrame);
         testFrame.setVisible(true);
 

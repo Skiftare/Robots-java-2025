@@ -8,14 +8,14 @@ import javax.swing.event.InternalFrameEvent;
 /**
  * Декоратор для добавления подтверждения закрытия к JInternalFrame
  */
-public class CloseConfirmationDecorator {
+public class FrameCloseConfirmationDecorator {
     /**
      * Добавляет диалог подтверждения закрытия к JInternalFrame
      *
      * @param frame    Окно для добавления подтверждения
      * @param strategy Стратегия для подтверждения
      */
-    public static void addCloseConfirmation(JInternalFrame frame, ClosingStrategy strategy) {
+    public static void addCloseConfirmation(JInternalFrame frame, FrameClosingStrategy strategy) {
         frame.setDefaultCloseOperation(JInternalFrame.DO_NOTHING_ON_CLOSE);
         frame.addInternalFrameListener(new InternalFrameAdapter() {
             @Override
@@ -33,6 +33,6 @@ public class CloseConfirmationDecorator {
      * @param frame Окно для добавления подтверждения
      */
     public static void addCloseConfirmation(JInternalFrame frame) {
-        addCloseConfirmation(frame, new DefaultClosingStrategy());
+        addCloseConfirmation(frame, new DefaultFrameClosingStrategy());
     }
 }

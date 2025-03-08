@@ -5,7 +5,7 @@ import javax.swing.JInternalFrame;
 /**
  * Интерфейс для стратегии подтверждения закрытия окон
  */
-public interface ClosingStrategy {
+public interface FrameClosingStrategy {
     /**
      * Запрашивает подтверждение закрытия окна
      * @param frame Окно, которое закрывается

@@ -1,15 +1,14 @@
 package gui;
 
-import gui.system.closing.CloseConfirmationDecorator;
+import gui.system.closing.DefaultFrameClosingStrategy;
+import gui.system.closing.FrameCloseConfirmationDecorator;
 import gui.ui.GameWindow;
 import gui.ui.LogWindow;
 import log.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 
 import static java.lang.Math.round;
 
@@ -42,7 +41,27 @@ public class MainApplicationFrame extends JFrame {
         addWindow(logWindow);
 
         setJMenuBar(generateMenuBar());
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                DefaultFrameClosingStrategy closingStrategy = new DefaultFrameClosingStrategy(
+                        "Вы уверены, что хотите закрыть приложение?",
+                        "Подтверждение выхода");
+
+                int result = JOptionPane.showConfirmDialog(
+                        MainApplicationFrame.this,
+                        closingStrategy.getMessage(),
+                        closingStrategy.getTitle(),
+                        JOptionPane.YES_NO_OPTION
+                );
+
+                if (result == JOptionPane.YES_OPTION) {
+                    System.exit(0);
+                }
+            }
+        });
+
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -107,7 +126,7 @@ public class MainApplicationFrame extends JFrame {
     }
 
     protected void addWindow(JInternalFrame frame) {
-        CloseConfirmationDecorator.addCloseConfirmation(frame);
+        FrameCloseConfirmationDecorator.addCloseConfirmation(frame);
         desktopPane.add(frame);
         frame.setVisible(true);
     }
