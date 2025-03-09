@@ -117,7 +117,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         frame.setVisible(true);
     }
 
-    private void updateTitle() {
+    void updateTitle() {
         setTitle(LocalizationManager.getInstance().getString("application.title"));
     }
 
