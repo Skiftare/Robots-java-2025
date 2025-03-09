@@ -113,8 +113,8 @@ public class GameVisualizer extends JPanel {
     public void paint(Graphics g) {
         super.paint(g);
 
-        panelWidth = getWidth();
-        panelHeight = getHeight();
+        panelWidth = getWidth() + 375;
+        panelHeight = getHeight() + 185;
 
         if (!isPanelInitialized) {
             isPanelInitialized = true;
