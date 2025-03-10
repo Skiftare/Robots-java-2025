@@ -1,9 +1,6 @@
-package gui;
+package log;
 
 import gui.ui.LogWindow;
-import log.LogChangeListener;
-import log.LogLevel;
-import log.LogWindowSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -163,8 +160,6 @@ public class LogWindowTest {
         // Simulate frame closing
         try {
             SwingUtilities.invokeAndWait(() -> {
-                InternalFrameEvent e = new InternalFrameEvent(logWindow,
-                        InternalFrameEvent.INTERNAL_FRAME_CLOSING);
                 logWindow.doDefaultCloseAction();
                 logWindow.dispose();
             });
