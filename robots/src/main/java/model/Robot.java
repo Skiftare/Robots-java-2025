@@ -9,6 +9,11 @@ public class Robot {
     private static final double MAX_VELOCITY = 0.1;
     private static final double MAX_ANGULAR_VELOCITY = 0.001;
 
+    public static final int ROBOT_WIDTH = 30;
+    public static final int ROBOT_HEIGHT = 10;
+    public static final int EYE_OFFSET_X = 10;
+    public static final int EYE_SIZE = 5;
+
     public Robot(double x, double y, double direction) {
         this.positionX = x;
         this.positionY = y;

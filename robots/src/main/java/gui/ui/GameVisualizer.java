@@ -17,6 +17,8 @@ import java.util.TimerTask;
 import javax.swing.JPanel;
 import log.Logger;
 
+import static model.Robot.*;
+
 public class GameVisualizer extends JPanel {
     private final Robot robot;
     private final Target target;
@@ -177,29 +179,22 @@ public class GameVisualizer extends JPanel {
     }
 
     private void drawRobot(Graphics2D g, double x, double y, double direction) {
-        int robotWidth = 30;
-        int robotHeight = 10;
-        int eyeOffsetX = 10;
-        int eyeSize = 5;
-        double dirLineLength = 30.0;
-
         AffineTransform currentTransform = g.getTransform();
 
         g.translate(x, y);
         g.rotate(direction);
 
         g.setColor(Color.MAGENTA);
-        fillOval(g, 0, 0, robotWidth, robotHeight);
+        fillOval(g, 0, 0, ROBOT_WIDTH, ROBOT_HEIGHT);
         g.setColor(Color.BLACK);
-        drawOval(g, 0, 0, robotWidth, robotHeight);
+        drawOval(g, 0, 0, ROBOT_WIDTH, ROBOT_HEIGHT);
 
         g.setColor(Color.WHITE);
-        fillOval(g, eyeOffsetX, 0, eyeSize, eyeSize);
+        fillOval(g, EYE_OFFSET_X, 0, EYE_SIZE, EYE_SIZE);
         g.setColor(Color.BLACK);
-        drawOval(g, eyeOffsetX, 0, eyeSize, eyeSize);
+        drawOval(g, EYE_OFFSET_X, 0, EYE_SIZE, EYE_SIZE);
 
         g.setTransform(currentTransform);
-
     }
 
 
