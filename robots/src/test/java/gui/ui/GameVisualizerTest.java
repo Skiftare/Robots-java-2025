@@ -21,7 +21,7 @@ public class GameVisualizerTest {
     @Before
     public void setUp() {
         // Создаем экземпляр визуализатора игры
-        gameVisualizer = new GameVisualizer();
+        gameVisualizer = new gui.ui.GameVisualizer();
     }
 
     @Test
