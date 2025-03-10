@@ -40,7 +40,7 @@ public class GameVisualizer extends JPanel {
             public void run() {
                 onModelUpdateEvent();
             }
-        }, 0, 10);
+        }, 0, 5);
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -83,16 +83,27 @@ public class GameVisualizer extends JPanel {
 
         double angleToTarget = angleTo(robot.getPositionX(), robot.getPositionY(),
                 target.getX(), target.getY());
+        double angularVelocity = getAngularVelocity(angleToTarget);
+
+        // Pass current panel dimensions
+        robot.move(Robot.getMaxVelocity(), angularVelocity, 10, getWidth(), getHeight());
+    }
+
+    private double getAngularVelocity(double angleToTarget) {
         double angularVelocity = 0;
 
-        if (angleToTarget > robot.getDirection()) {
+        // Calculate angle difference
+        double angleDiff = angleToTarget - robot.getDirection();
+        if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+        // Set angular velocity based on angle difference
+        if (angleDiff > 0) {
             angularVelocity = Robot.getMaxAngularVelocity();
-        }
-        if (angleToTarget < robot.getDirection()) {
+        } else if (angleDiff < 0) {
             angularVelocity = -Robot.getMaxAngularVelocity();
         }
-
-        robot.move(Robot.getMaxVelocity(), angularVelocity, 10, panelWidth, panelHeight);
+        return angularVelocity;
     }
 
     private static double asNormalizedRadians(double angle) {
@@ -113,44 +124,67 @@ public class GameVisualizer extends JPanel {
     public void paint(Graphics g) {
         super.paint(g);
 
-        panelWidth = getWidth() + 375;
-        panelHeight = getHeight() + 185;
+        panelWidth = this.getWidth();
+        panelHeight = this.getHeight();
 
         if (!isPanelInitialized) {
             isPanelInitialized = true;
         }
 
         Graphics2D g2d = (Graphics2D) g;
-        drawRobot(g2d, round(robot.getPositionX()), round(robot.getPositionY()), robot.getDirection());
+
+        // Save original transform
+        AffineTransform originalTransform = g2d.getTransform();
+
+        // Draw the target first with no transformations
         drawTarget(g2d, target.getX(), target.getY());
+
+        // Then draw the robot
+        drawRobot(g2d, robot.getPositionX(), robot.getPositionY(), robot.getDirection());
+
+        // Restore original transform
+        g2d.setTransform(originalTransform);
     }
 
-    private static void fillOval(Graphics g, int centerX, int centerY, int diam1, int diam2) {
+    private static void fillOval(Graphics2D g, int centerX, int centerY, int diam1, int diam2) {
         g.fillOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
     }
 
-    private static void drawOval(Graphics g, int centerX, int centerY, int diam1, int diam2) {
+    private static void drawOval(Graphics2D g, int centerX, int centerY, int diam1, int diam2) {
         g.drawOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
     }
 
-    private void drawRobot(Graphics2D g, int x, int y, double direction) {
-        int robotCenterX = round(robot.getPositionX());
-        int robotCenterY = round(robot.getPositionY());
-        AffineTransform t = AffineTransform.getRotateInstance(direction, robotCenterX, robotCenterY);
-        g.setTransform(t);
+    private void drawRobot(Graphics2D g, double x, double y, double direction) {
+        int robotCenterX = round(x);
+        int robotCenterY = round(y);
+
+        // Save original transform before applying rotation
+        AffineTransform originalTransform = g.getTransform();
+
+        // Create a new transform for rotation around the robot's center
+        AffineTransform rotationTransform = AffineTransform.getRotateInstance(
+                direction, robotCenterX, robotCenterY);
+
+        // Apply the rotation
+        g.setTransform(rotationTransform);
+
+        // Draw robot body
         g.setColor(Color.MAGENTA);
         fillOval(g, robotCenterX, robotCenterY, 30, 10);
         g.setColor(Color.BLACK);
         drawOval(g, robotCenterX, robotCenterY, 30, 10);
+
+        // Draw robot eye
         g.setColor(Color.WHITE);
         fillOval(g, robotCenterX + 10, robotCenterY, 5, 5);
         g.setColor(Color.BLACK);
         drawOval(g, robotCenterX + 10, robotCenterY, 5, 5);
+
+        // Restore original transform
+        g.setTransform(originalTransform);
     }
 
     private void drawTarget(Graphics2D g, int x, int y) {
-        AffineTransform t = AffineTransform.getRotateInstance(0, 0, 0);
-        g.setTransform(t);
         g.setColor(Color.GREEN);
         fillOval(g, x, y, 5, 5);
         g.setColor(Color.BLACK);

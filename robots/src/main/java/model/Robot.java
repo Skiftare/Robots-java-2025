@@ -1,5 +1,7 @@
 package model;
 
+import log.Logger;
+
 public class Robot {
     private double positionX;
     private double positionY;
@@ -20,11 +22,18 @@ public class Robot {
         double newX = positionX + velocity * duration * Math.cos(direction);
         double newY = positionY + velocity * duration * Math.sin(direction);
 
-        // Handle border overflow
-        if (newX < 0) newX = panelWidth;
-        if (newX > panelWidth) newX = 0;
-        if (newY < 0) newY = panelHeight;
-        if (newY > panelHeight) newY = 0;
+        if (newX < 0) {
+            newX = panelWidth;
+        }
+        if (newX > panelWidth){
+            newX = 0;
+        }
+        if (newY < 0) {
+            newY = panelHeight;
+        }
+        if (newY > panelHeight) {
+            newY = 0;
+        }
 
         positionX = newX;
         positionY = newY;
