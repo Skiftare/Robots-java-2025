@@ -63,7 +63,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         });
     }
 
-    void resizeInternalFrames() {
+    public void resizeInternalFrames() {
         SwingUtilities.invokeLater(() -> {
             int width = desktopPane.getWidth();
             int height = desktopPane.getHeight();
@@ -101,7 +101,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         });
     }
 
-    protected LogWindow createLogWindow() {
+    public LogWindow createLogWindow() {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
         logWindow.setLocation(10, 10);
         logWindow.setSize(300, 800);
@@ -111,13 +111,13 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         return logWindow;
     }
 
-    protected void addWindow(JInternalFrame frame) {
+    public void addWindow(JInternalFrame frame) {
         FrameCloseConfirmationDecorator.addCloseConfirmation(frame);
         desktopPane.add(frame);
         frame.setVisible(true);
     }
 
-    void updateTitle() {
+    public void updateTitle() {
         setTitle(LocalizationManager.getInstance().getString("application.title"));
     }
 
