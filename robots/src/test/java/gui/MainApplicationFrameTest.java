@@ -1,9 +1,9 @@
-package gui.ui;
+package gui;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import gui.MainApplicationFrame;
 import gui.system.localization.LocalizationManager;
+import gui.ui.LogWindow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
