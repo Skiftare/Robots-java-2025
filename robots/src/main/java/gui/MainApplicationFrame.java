@@ -62,7 +62,16 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             }
         });
     }
+    public void close() {
+        DefaultFrameClosingStrategy strategy = new DefaultFrameClosingStrategy(
+                LocalizationManager.getInstance().getString("close.app.confirm"),
+                LocalizationManager.getInstance().getString("close.app.confirm.title")
+        );
 
+        if (strategy.confirmClosing(this)) {
+            System.exit(0);
+        }
+    }
     void resizeInternalFrames() {
         SwingUtilities.invokeLater(() -> {
             int width = desktopPane.getWidth();

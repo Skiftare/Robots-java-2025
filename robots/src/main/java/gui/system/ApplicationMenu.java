@@ -17,6 +17,8 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenu testMenu;
     private JMenuItem logMessageMenuItem;
     private JMenu languageMenu;
+    private JMenu fileMenu;
+    private JMenuItem exitMenuItem;
 
     public ApplicationMenu(MainApplicationFrame mainFrame) {
         this.mainFrame = mainFrame;
@@ -28,6 +30,8 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         add(createLookAndFeelMenu());
         add(createTestMenu());
         add(createLanguageMenu());
+        add(createFileMenu());
+
     }
 
     private JMenu createLookAndFeelMenu() {
@@ -54,6 +58,8 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         return systemLookAndFeel;
     }
 
+
+
     private JMenuItem createCrossPlatformLookAndFeelMenuItem() {
         JMenuItem crossplatformLookAndFeel = new JMenuItem(LocalizationManager.getInstance().getString("menu.view.cross-platform"), KeyEvent.VK_S);
         crossplatformLookAndFeel.addActionListener((event) -> {
@@ -72,6 +78,26 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         logMessageMenuItem = createLogMessageMenuItem();
         testMenu.add(logMessageMenuItem);
         return testMenu;
+    }
+
+    private JMenu createFileMenu() {
+        fileMenu = new JMenu(LocalizationManager.getInstance().getString("menu.file"));
+        fileMenu.setMnemonic(KeyEvent.VK_F);
+        fileMenu.getAccessibleContext().setAccessibleDescription(
+                LocalizationManager.getInstance().getString("menu.file.desc")
+        );
+
+        exitMenuItem = createExitMenuItem();
+        fileMenu.add(exitMenuItem);
+        return fileMenu;
+    }
+
+    private JMenuItem createExitMenuItem() {
+        JMenuItem exitItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.app.exit"), KeyEvent.VK_X);
+        exitItem.addActionListener((event) -> {
+            mainFrame.close();
+        });
+        return exitItem;
     }
 
     private JMenuItem createLogMessageMenuItem() {
@@ -110,7 +136,6 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     }
 
 
-
     @Override
     public void localeChanged() {
         if (lookAndFeelMenu != null) {
@@ -144,5 +169,16 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
             languageMenu.getAccessibleContext().setAccessibleDescription(
                     LocalizationManager.getInstance().getString("menu.language.desc"));
         }
+
+        if (fileMenu != null) {
+            fileMenu.setText(LocalizationManager.getInstance().getString("menu.file"));
+            fileMenu.getAccessibleContext().setAccessibleDescription(
+                    LocalizationManager.getInstance().getString("menu.file.desc"));
+
+            if (exitMenuItem != null) {
+                exitMenuItem.setText(LocalizationManager.getInstance().getString("menu.app.exit"));
+            }
+        }
+
     }
 }
