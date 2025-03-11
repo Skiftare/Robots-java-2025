@@ -21,30 +21,31 @@ public class Robot {
     }
 
     public void move(double velocity, double angularVelocity, double duration, int panelWidth, int panelHeight) {
+        // Limit velocity and angular velocity to their maximum values
+        velocity = Math.min(Math.abs(velocity), MAX_VELOCITY) * (velocity >= 0 ? 1 : -1);
+        angularVelocity = Math.min(Math.abs(angularVelocity), MAX_ANGULAR_VELOCITY) * (angularVelocity >= 0 ? 1 : -1);
+
         direction += angularVelocity * duration;
         direction = asNormalizedRadians(direction);
 
         double newX = positionX + velocity * duration * Math.cos(direction);
         double newY = positionY + velocity * duration * Math.sin(direction);
 
-        // 3. Проверка границ с большим запасом
+        // Check boundaries
         if (newX < 0) {
             newX = panelWidth;
-
-        } else if (newX > panelWidth ) {
+        } else if (newX > panelWidth) {
             newX = 0;
         }
 
         if (newY < 0) {
             newY = panelHeight;
-        } else if (newY > panelHeight ) {
+        } else if (newY > panelHeight) {
             newY = 0;
         }
 
         positionX = newX;
         positionY = newY;
-
-
     }
 
     private double asNormalizedRadians(double angle) {
