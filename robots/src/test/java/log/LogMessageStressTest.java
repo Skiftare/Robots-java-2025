@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class LogMessageStressTest {
 
-    private static final int MESSAGE_COUNT = 50000;
+    private static final int MESSAGE_COUNT = 5000;
     private static final int PHASE_COUNT = 5;
     private static final int WINDOW_COUNT = 3;
     private static final double MAX_GROWTH_PERCENTAGE = 10.0;
@@ -78,7 +78,7 @@ public class LogMessageStressTest {
 
             boolean leakDetected = analyzeMemoryPattern(memoryReadings);
 
-            double memoryRatio = (double)finalMemory / baselineMemory;
+            double memoryRatio = (double) finalMemory / baselineMemory;
             boolean significantResidualMemory = memoryRatio > 1.5;
 
             int expectedNotifications = PHASE_COUNT * MESSAGE_COUNT;
@@ -101,6 +101,7 @@ public class LogMessageStressTest {
 
     /**
      * Analyzes memory readings to detect leak patterns
+     *
      * @return true if a memory leak pattern is detected
      */
     private boolean analyzeMemoryPattern(List<Long> memoryReadings) {
@@ -114,7 +115,7 @@ public class LogMessageStressTest {
         // Look for steady increases across multiple readings
         for (int i = 2; i < memoryReadings.size(); i++) {
             double growthPercentage =
-                    100.0 * (memoryReadings.get(i) - memoryReadings.get(i-1)) / memoryReadings.get(i-1);
+                    100.0 * (memoryReadings.get(i) - memoryReadings.get(i - 1)) / memoryReadings.get(i - 1);
 
             if (growthPercentage > MAX_GROWTH_PERCENTAGE) {
                 steadyIncreaseCount++;

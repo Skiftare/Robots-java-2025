@@ -2,7 +2,6 @@ package gui.ui;
 
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
-
 import javax.swing.*;
 import java.awt.*;
 

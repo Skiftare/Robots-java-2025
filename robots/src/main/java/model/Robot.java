@@ -6,6 +6,7 @@ public class Robot {
     private double positionX;
     private double positionY;
     private double direction;
+    // Максимальные значения теперь не используются для дискретного перемещения
     private static final double MAX_VELOCITY = 0.1;
     private static final double MAX_ANGULAR_VELOCITY = 0.001;
 
@@ -20,8 +21,17 @@ public class Robot {
         this.direction = direction;
     }
 
+    public void setPosition(double x, double y) {
+        this.positionX = x;
+        this.positionY = y;
+    }
+
+    public void setDirection(double direction) {
+        this.direction = direction;
+    }
+
+    // Старый метод перемещения оставляем на случай, если понадобится
     public void move(double velocity, double angularVelocity, double duration, int panelWidth, int panelHeight) {
-        // Limit velocity and angular velocity to their maximum values
         velocity = Math.min(Math.abs(velocity), MAX_VELOCITY) * (velocity >= 0 ? 1 : -1);
         angularVelocity = Math.min(Math.abs(angularVelocity), MAX_ANGULAR_VELOCITY) * (angularVelocity >= 0 ? 1 : -1);
 
@@ -31,7 +41,7 @@ public class Robot {
         double newX = positionX + velocity * duration * Math.cos(direction);
         double newY = positionY + velocity * duration * Math.sin(direction);
 
-        // Check boundaries
+        // Телепортация при выходе за границы (по панельным координатам)
         if (newX < 0) {
             newX = panelWidth;
         } else if (newX > panelWidth) {
