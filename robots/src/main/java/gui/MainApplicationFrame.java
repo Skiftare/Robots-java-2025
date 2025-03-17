@@ -22,6 +22,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     private final JDesktopPane desktopPane = new JDesktopPane();
     private int oldWidth = -1;
     private int oldHeight = -1;
+    private final DefaultFrameClosingStrategy closeStrategy;
 
     public MainApplicationFrame() {
         LocalizationManager.getInstance().addListener(this);
@@ -46,13 +47,14 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
 
         updateTitle();
 
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        this.closeStrategy = new DefaultFrameClosingStrategy(
+                LocalizationManager.getInstance().getString("close.app.confirm"),
+                LocalizationManager.getInstance().getString("close.app.confirm.title")
+        );
         FrameCloseConfirmationDecorator.addCloseConfirmation(
                 MainApplicationFrame.this,
-                new DefaultFrameClosingStrategy(
-                        LocalizationManager.getInstance().getString("close.app.confirm"),
-                        LocalizationManager.getInstance().getString("close.app.confirm.title")
-                )
+                closeStrategy,
+                () -> System.exit(0)
         );
 
         addComponentListener(new ComponentAdapter() {
@@ -62,16 +64,8 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             }
         });
     }
-    public void close() {
-        DefaultFrameClosingStrategy strategy = new DefaultFrameClosingStrategy(
-                LocalizationManager.getInstance().getString("close.app.confirm"),
-                LocalizationManager.getInstance().getString("close.app.confirm.title")
-        );
 
-        if (strategy.confirmClosing(this)) {
-            System.exit(0);
-        }
-    }
+
     void resizeInternalFrames() {
         SwingUtilities.invokeLater(() -> {
             int width = desktopPane.getWidth();
@@ -109,6 +103,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             desktopPane.repaint();
         });
     }
+
 
     protected LogWindow createLogWindow() {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
