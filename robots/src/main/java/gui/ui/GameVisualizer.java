@@ -6,7 +6,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.geom.AffineTransform;
 import javax.swing.AbstractAction;
-import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import java.io.IOException;
@@ -33,6 +32,9 @@ public class GameVisualizer extends JPanel {
     private double robotImageWidth;
     private double robotImageHeight;
 
+    // Новый объект, который можно толкать
+    private MovableObject movableObject;
+
     public GameVisualizer() {
         // Инициализируем робота с начальными координатами в клетке
         this.robot = new Robot(0, 0, 0);
@@ -49,15 +51,16 @@ public class GameVisualizer extends JPanel {
 
         // Загружаем изображение робота
         try {
-            // Правильный путь для загрузки изображения
             String imagePath = Paths.get("robots/src/main/resources/robot.png").toString();
             robotImage = ImageIO.read(new File(imagePath));
-            // Получаем исходные размеры изображения
             robotImageWidth = robotImage.getWidth(null);
             robotImageHeight = robotImage.getHeight(null);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // Добавляем новый объект с текстурой в клетку (например, клетка (5, 5))
+        movableObject = new MovableObject(5, 5, "robots/src/main/resources/object.png");
     }
 
     /**
@@ -106,6 +109,21 @@ public class GameVisualizer extends JPanel {
      * @param dy изменение по вертикали (-1, 0, 1)
      */
     private void moveRobotInCells(int dx, int dy) {
+        // Получаем текущие координаты робота
+        int[] robotPosition = robot.getPositionInCell();
+        int robotCellX = robotPosition[0];
+        int robotCellY = robotPosition[1];
+
+        // Проверяем, есть ли объект в клетке, в которую будет двигаться робот
+        int newRobotCellX = robotCellX + dx;
+        int newRobotCellY = robotCellY + dy;
+
+        // Если объект в соседней клетке, толкаем его
+        if (movableObject.getPosition()[0] == newRobotCellX && movableObject.getPosition()[1] == newRobotCellY) {
+            movableObject.setPosition(movableObject.getPosition()[0] + dx, movableObject.getPosition()[1] + dy);
+        }
+
+        // Перемещаем робота
         robot.move(dx, dy, grid.getColumns(), grid.getRows());
         repaint();
     }
@@ -140,6 +158,9 @@ public class GameVisualizer extends JPanel {
         // Отрисовка робота с текстурой
         drawRobot(g2d, robot.getPositionInCell()[0], robot.getPositionInCell()[1]);
 
+        // Отрисовка объекта с текстурой
+        movableObject.draw(g2d, grid.getCellSize(panelWidth, panelHeight), grid.getStartCoordinates(panelWidth, panelHeight));
+
         g2d.setTransform(originalTransform);
     }
 
@@ -155,7 +176,7 @@ public class GameVisualizer extends JPanel {
         int cellSize = grid.getCellSize(panelWidth, panelHeight);
         Point start = grid.getStartCoordinates(panelWidth, panelHeight);
 
-        // Пропорциональное изменение размера изображения, чтобы оно не растягивалось
+        // Пропорциональное изменение размера изображения робота, чтобы оно не растягивалось
         int robotWidth = (int) (robotImageWidth * (cellSize / 30.0));  // Пропорционально размеру клетки
         int robotHeight = (int) (robotImageHeight * (cellSize / 30.0));
 
@@ -167,14 +188,5 @@ public class GameVisualizer extends JPanel {
         int x = start.x + cellX * cellSize + cellSize / 2 - robotWidth / 2;
         int y = start.y + cellY * cellSize + cellSize / 2 - robotHeight / 2;
         g.drawImage(robotImage, x, y, robotWidth, robotHeight, null);
-    }
-
-    // Механизм расстановки объектов в клетках (например, для создания препятствий)
-    public void setObjectInCell(int x, int y, Object object) {
-        objects[y][x] = object;
-    }
-
-    public Object getObjectInCell(int x, int y) {
-        return objects[y][x];
     }
 }
