@@ -28,17 +28,7 @@ public class FrameCloseConfirmationDecorator {
             }
         });
     }
-    public static void addCloseConfirmation(JFrame frame, FrameClosingStrategy strategy) {
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                if (strategy.confirmClosing(frame)) {
-                    System.exit(0);
-                }
-            }
-        });
-    }
+
 
     /**
      * Добавляет стандартный диалог подтверждения закрытия
@@ -51,4 +41,22 @@ public class FrameCloseConfirmationDecorator {
     public static void addCloseConfirmation(JFrame frame, String message, String title) {
         addCloseConfirmation(frame, new DefaultFrameClosingStrategy(message, title));
     }
+
+    public static void addCloseConfirmation(JFrame frame, FrameClosingStrategy strategy, Runnable exitAction) {
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (strategy.confirmClosing(frame)) {
+                    exitAction.run();
+                }
+            }
+        });
+    }
+
+    // Overload the existing method for backward compatibility
+    public static void addCloseConfirmation(JFrame frame, FrameClosingStrategy strategy) {
+        addCloseConfirmation(frame, strategy, () -> System.exit(0));
+    }
+
 }

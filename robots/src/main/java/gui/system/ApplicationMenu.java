@@ -8,6 +8,7 @@ import log.Logger;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 
 public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private final MainApplicationFrame mainFrame;
@@ -95,7 +96,7 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenuItem createExitMenuItem() {
         JMenuItem exitItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.app.exit"), KeyEvent.VK_X);
         exitItem.addActionListener((event) -> {
-            mainFrame.close();
+            mainFrame.dispatchEvent(new WindowEvent(mainFrame, WindowEvent.WINDOW_CLOSING));
         });
         return exitItem;
     }
