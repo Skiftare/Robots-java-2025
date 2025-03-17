@@ -1,90 +1,46 @@
 package model;
 
-import log.Logger;
-
 public class Robot {
-    private double positionX;
-    private double positionY;
+    private int cellX;
+    private int cellY;
     private double direction;
-    // Максимальные значения теперь не используются для дискретного перемещения
-    private static final double MAX_VELOCITY = 0.1;
-    private static final double MAX_ANGULAR_VELOCITY = 0.001;
 
     public static final int ROBOT_WIDTH = 30;
     public static final int ROBOT_HEIGHT = 10;
     public static final int EYE_OFFSET_X = 10;
     public static final int EYE_SIZE = 5;
 
-    public Robot(double x, double y, double direction) {
-        this.positionX = x;
-        this.positionY = y;
+    public Robot(int x, int y, double direction) {
+        this.cellX = x;
+        this.cellY = y;
         this.direction = direction;
     }
 
-    public void setPosition(double x, double y) {
-        this.positionX = x;
-        this.positionY = y;
+    public void setPositionInCell(int x, int y) {
+        this.cellX = x;
+        this.cellY = y;
+    }
+
+    public int[] getPositionInCell() {
+        return new int[]{cellX, cellY};
     }
 
     public void setDirection(double direction) {
         this.direction = direction;
     }
 
-    // Старый метод перемещения оставляем на случай, если понадобится
-    public void move(double velocity, double angularVelocity, double duration, int panelWidth, int panelHeight) {
-        velocity = Math.min(Math.abs(velocity), MAX_VELOCITY) * (velocity >= 0 ? 1 : -1);
-        angularVelocity = Math.min(Math.abs(angularVelocity), MAX_ANGULAR_VELOCITY) * (angularVelocity >= 0 ? 1 : -1);
-
-        direction += angularVelocity * duration;
-        direction = asNormalizedRadians(direction);
-
-        double newX = positionX + velocity * duration * Math.cos(direction);
-        double newY = positionY + velocity * duration * Math.sin(direction);
-
-        // Телепортация при выходе за границы (по панельным координатам)
-        if (newX < 0) {
-            newX = panelWidth;
-        } else if (newX > panelWidth) {
-            newX = 0;
-        }
-
-        if (newY < 0) {
-            newY = panelHeight;
-        } else if (newY > panelHeight) {
-            newY = 0;
-        }
-
-        positionX = newX;
-        positionY = newY;
-    }
-
-    private double asNormalizedRadians(double angle) {
-        while (angle < 0) {
-            angle += 2 * Math.PI;
-        }
-        while (angle >= 2 * Math.PI) {
-            angle -= 2 * Math.PI;
-        }
-        return angle;
-    }
-
-    public double getPositionX() {
-        return positionX;
-    }
-
-    public double getPositionY() {
-        return positionY;
-    }
-
     public double getDirection() {
         return direction;
     }
 
-    public static double getMaxVelocity() {
-        return MAX_VELOCITY;
-    }
+    public void move(int dx, int dy, int columns, int rows) {
+        cellX += dx;
+        cellY += dy;
 
-    public static double getMaxAngularVelocity() {
-        return MAX_ANGULAR_VELOCITY;
+        // Телепортация при выходе за границы
+        if (cellX < 0) cellX = columns - 1;
+        if (cellX >= columns) cellX = 0;
+        if (cellY < 0) cellY = rows - 1;
+        if (cellY >= rows) cellY = 0;
     }
 }
