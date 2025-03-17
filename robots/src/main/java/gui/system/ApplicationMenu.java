@@ -84,6 +84,7 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenu createFileMenu() {
         fileMenu = new JMenu(LocalizationManager.getInstance().getString("menu.file"));
         fileMenu.setMnemonic(KeyEvent.VK_F);
+
         fileMenu.getAccessibleContext().setAccessibleDescription(
                 LocalizationManager.getInstance().getString("menu.file.desc")
         );
