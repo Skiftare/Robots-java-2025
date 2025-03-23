@@ -65,6 +65,9 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         });
     }
 
+    public GameWindow getGameWindow() {
+        return (GameWindow) desktopPane.getComponent(0);  // Получаем GameWindow из desktopPane
+    }
 
     void resizeInternalFrames() {
         SwingUtilities.invokeLater(() -> {
@@ -103,7 +106,6 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             desktopPane.repaint();
         });
     }
-
 
     protected LogWindow createLogWindow() {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());

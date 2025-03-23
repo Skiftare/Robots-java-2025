@@ -5,6 +5,9 @@ import gui.system.localization.Language;
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
 import log.Logger;
+import gui.system.saving.GameSaver;
+import gui.system.saving.GameLoader;
+import gui.system.saving.MessageDisplayer;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
@@ -20,6 +23,9 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenu languageMenu;
     private JMenu fileMenu;
     private JMenuItem exitMenuItem;
+    private JMenuItem saveMenuItem;
+    private JMenuItem loadMenuItem;
+    private JMenu saveLoadMenu;  // Храним ссылку на меню для сохранения и загрузки
 
     public ApplicationMenu(MainApplicationFrame mainFrame) {
         this.mainFrame = mainFrame;
@@ -32,7 +38,41 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         add(createTestMenu());
         add(createLanguageMenu());
         add(createFileMenu());
+        add(createSaveLoadMenu());  // Новый пункт меню для сохранения и загрузки
+    }
 
+    private JMenu createSaveLoadMenu() {
+        saveLoadMenu = new JMenu(LocalizationManager.getInstance().getString("menu.saveLoad"));
+        saveLoadMenu.setMnemonic(KeyEvent.VK_S);
+
+        saveMenuItem = createSaveMenuItem();
+        loadMenuItem = createLoadMenuItem();
+
+        saveLoadMenu.add(saveMenuItem);
+        saveLoadMenu.add(loadMenuItem);
+
+        return saveLoadMenu;
+    }
+
+    private JMenuItem createSaveMenuItem() {
+        JMenuItem saveItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.save"), KeyEvent.VK_S);
+        saveItem.addActionListener(event -> {
+            GameSaver.saveGameState(mainFrame.getGameWindow().getGameVisualizer().getRobot(),
+                    mainFrame.getGameWindow().getGameVisualizer().getMovableObject());
+            MessageDisplayer.showCenteredMessage(mainFrame, "message.saved"); // Показываем сообщение
+        });
+        return saveItem;
+    }
+
+    private JMenuItem createLoadMenuItem() {
+        JMenuItem loadItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.load"), KeyEvent.VK_L);
+        loadItem.addActionListener(event -> {
+            GameLoader.loadGameState(mainFrame.getGameWindow().getGameVisualizer().getRobot(),
+                    mainFrame.getGameWindow().getGameVisualizer().getMovableObject());
+            mainFrame.getGameWindow().getGameVisualizer().repaint(); // Перерисовываем карту после загрузки
+            MessageDisplayer.showCenteredMessage(mainFrame, "message.loaded"); // Показываем сообщение
+        });
+        return loadItem;
     }
 
     private JMenu createLookAndFeelMenu() {
@@ -58,8 +98,6 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         });
         return systemLookAndFeel;
     }
-
-
 
     private JMenuItem createCrossPlatformLookAndFeelMenuItem() {
         JMenuItem crossplatformLookAndFeel = new JMenuItem(LocalizationManager.getInstance().getString("menu.view.cross-platform"), KeyEvent.VK_S);
@@ -137,7 +175,6 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         }
     }
 
-
     @Override
     public void localeChanged() {
         if (lookAndFeelMenu != null) {
@@ -182,5 +219,17 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
             }
         }
 
+        // Обновляем текст для кнопок Save и Load
+        if (saveMenuItem != null) {
+            saveMenuItem.setText(LocalizationManager.getInstance().getString("menu.save"));
+        }
+        if (loadMenuItem != null) {
+            loadMenuItem.setText(LocalizationManager.getInstance().getString("menu.load"));
+        }
+
+        // Обновляем заголовок подменю SaveLoad
+        if (saveLoadMenu != null) {
+            saveLoadMenu.setText(LocalizationManager.getInstance().getString("menu.saveLoad"));
+        }
     }
 }

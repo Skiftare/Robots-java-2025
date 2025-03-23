@@ -189,4 +189,13 @@ public class GameVisualizer extends JPanel {
         int y = start.y + cellY * cellSize + cellSize / 2 - robotHeight / 2;
         g.drawImage(robotImage, x, y, robotWidth, robotHeight, null);
     }
+
+    public Robot getRobot() {
+        return robot;
+    }
+
+    public MovableObject getMovableObject() {
+        return movableObject;
+    }
+
 }

@@ -1,131 +1,104 @@
-package gui.ui;
+import static org.junit.jupiter.api.Assertions.*;
 
-import model.Robot;
-import model.Target;
-import org.junit.Before;
-import org.junit.Test;
+import gui.ui.GameVisualizer;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
-import java.lang.reflect.Field;
 
-import static org.junit.Assert.*;
-
-public class GameVisualizerTest {
+class GameVisualizerTest {
 
     private GameVisualizer gameVisualizer;
+    private Robot robot;
 
-    @Before
-    public void setUp() {
-        // Создаем экземпляр визуализатора игры
-        gameVisualizer = new gui.ui.GameVisualizer();
+    @BeforeEach
+    void setUp() {
+        gameVisualizer = new GameVisualizer();
+        robot = gameVisualizer.getRobot();  // Получаем объект робота из GameVisualizer
     }
 
     @Test
-    public void testSetTargetPosition() throws Exception {
-        // Задаем новую позицию для цели
-        Point newTarget = new Point(250, 300);
-        gameVisualizer.setTargetPosition(newTarget);
-
-        // С помощью рефлексии получаем приватное поле target
-        Field targetField = GameVisualizer.class.getDeclaredField("target");
-        targetField.setAccessible(true);
-        Target target = (Target) targetField.get(gameVisualizer);
-
-        assertEquals("X координата цели должна обновиться", newTarget.x, target.getX(), 0.001);
-        assertEquals("Y координата цели должна обновиться", newTarget.y, target.getY(), 0.001);
+    void testRobotInitialPosition() {
+        // Проверка, что робот изначально находится в центре экрана
+        int[] position = robot.getPositionInCell();
+        assertEquals(10, position[0], "Робот должен быть в центре по оси X");
+        assertEquals(10, position[1], "Робот должен быть в центре по оси Y");
     }
 
     @Test
-    public void testOnModelUpdateEventMovesRobot() throws Exception {
-        // Чтобы onModelUpdateEvent не завершался досрочно, имитируем инициализацию панели:
-        // устанавливаем размер и вызываем paint с тестовой графикой.
-        gameVisualizer.setSize(800, 600);
-        BufferedImage image = new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB);
-        Graphics g = image.getGraphics();
-        gameVisualizer.paint(g); // в методе paint устанавливаются panelWidth, panelHeight и флаг isPanelInitialized
-
-        // Получаем приватное поле robot через рефлексию
-        Field robotField = GameVisualizer.class.getDeclaredField("robot");
-        robotField.setAccessible(true);
-        Robot robot = (Robot) robotField.get(gameVisualizer);
-
-        // Запоминаем исходное положение робота
-        double initialX = robot.getPositionX();
-        double initialY = robot.getPositionY();
-
-        // Обновляем цель – чтобы робот начал движение (например, вправо)
-        gameVisualizer.setTargetPosition(new Point(200, 100));
-
-        // Вызываем обновление модели
-        gameVisualizer.onModelUpdateEvent();
-
-        // Получаем обновленное положение робота
-        double updatedX = robot.getPositionX();
-        double updatedY = robot.getPositionY();
-
-        // При движении к цели, находящейся правее, X должен увеличиться.
-        assertTrue("Позиция робота по X должна увеличиться после обновления модели", updatedX > initialX);
+    void testMoveRobotUp() {
+        // Перемещаем робота вверх
+        gameVisualizer.moveRobotInCells(0, -1);
+        int[] position = robot.getPositionInCell();
+        assertEquals(10, position[0], "Робот должен оставаться по оси X");
+        assertEquals(9, position[1], "Робот должен переместиться на одну клетку вверх");
     }
 
     @Test
-    public void testMouseClickUpdatesTarget() throws Exception {
-        // Симулируем событие клика мышью по панели.
-        Point clickPoint = new Point(300, 350);
-        MouseListener[] listeners = gameVisualizer.getMouseListeners();
-        assertTrue("GameVisualizer должен иметь хотя бы один MouseListener", listeners.length > 0);
-
-        MouseEvent clickEvent = new MouseEvent(
-                gameVisualizer,
-                MouseEvent.MOUSE_CLICKED,
-                System.currentTimeMillis(),
-                0,
-                clickPoint.x,
-                clickPoint.y,
-                1,
-                false
-        );
-
-        // Вызываем обработчик клика для каждого зарегистрированного слушателя
-        for (MouseListener listener : listeners) {
-            listener.mouseClicked(clickEvent);
-        }
-
-        // Проверяем, что положение цели обновилось
-        Field targetField = GameVisualizer.class.getDeclaredField("target");
-        targetField.setAccessible(true);
-        Target target = (Target) targetField.get(gameVisualizer);
-
-        assertEquals("При клике мышью X координата цели должна обновиться", clickPoint.x, target.getX(), 0.001);
-        assertEquals("При клике мышью Y координата цели должна обновиться", clickPoint.y, target.getY(), 0.001);
+    void testMoveRobotDown() {
+        // Перемещаем робота вниз
+        gameVisualizer.moveRobotInCells(0, 1);
+        int[] position = robot.getPositionInCell();
+        assertEquals(10, position[0], "Робот должен оставаться по оси X");
+        assertEquals(11, position[1], "Робот должен переместиться на одну клетку вниз");
     }
 
     @Test
-    public void testOnRedrawEventCallsRepaint() {
-        // Создаем подкласс GameVisualizer, переопределяющий repaint, чтобы отследить его вызов.
-        class TestGameVisualizer extends GameVisualizer {
-            boolean repaintCalled = false;
+    void testMoveRobotLeft() {
+        // Перемещаем робота влево
+        gameVisualizer.moveRobotInCells(-1, 0);
+        int[] position = robot.getPositionInCell();
+        assertEquals(9, position[0], "Робот должен переместиться на одну клетку влево");
+        assertEquals(10, position[1], "Робот должен оставаться по оси Y");
+    }
 
-            @Override
-            public void repaint() {
-                repaintCalled = true;
-                super.repaint();
-            }
-        }
+    @Test
+    void testMoveRobotRight() {
+        // Перемещаем робота вправо
+        gameVisualizer.moveRobotInCells(1, 0);
+        int[] position = robot.getPositionInCell();
+        assertEquals(11, position[0], "Робот должен переместиться на одну клетку вправо");
+        assertEquals(10, position[1], "Робот должен оставаться по оси Y");
+    }
 
-        TestGameVisualizer testVisualizer = new TestGameVisualizer();
-        testVisualizer.onRedrawEvent();
+    @Test
+    void testMoveRobotAndPushObject() {
+        // Перемещаем объект в клетку рядом с роботом
+        MovableObject movableObject = gameVisualizer.getMovableObject();
+        movableObject.setPosition(10, 11);  // Размещаем объект в клетке (10, 11)
 
-        // Ждем немного, чтобы EventQueue.invokeLater выполнился
-        try {
-            Thread.sleep(50);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        // Робот толкает объект
+        gameVisualizer.moveRobotInCells(0, 1);  // Перемещаем робота вниз на одну клетку
 
-        assertTrue("Метод repaint должен быть вызван после onRedrawEvent", testVisualizer.repaintCalled);
+        // Проверяем, что объект был перемещён
+        int[] objectPosition = movableObject.getPosition();
+        assertEquals(10, objectPosition[0], "Объект должен остаться в той же колонке");
+        assertEquals(12, objectPosition[1], "Объект должен быть перемещен вниз");
+    }
+
+    @Test
+    void testObjectIsNotPushedWhenRobotIsNotNextToIt() {
+        // Проверяем, что объект не перемещается, если робот не рядом с ним
+        MovableObject movableObject = gameVisualizer.getMovableObject();
+        movableObject.setPosition(10, 12);  // Размещаем объект в клетке (10, 12)
+
+        // Робот не двигается рядом с объектом, так что объект не должен двигаться
+        gameVisualizer.moveRobotInCells(1, 0);  // Перемещаем робота вправо
+
+        // Проверяем, что объект не был перемещен
+        int[] objectPosition = movableObject.getPosition();
+        assertEquals(10, objectPosition[0], "Объект должен оставаться на месте");
+        assertEquals(12, objectPosition[1], "Объект должен оставаться на месте");
+    }
+
+    @Test
+    void testRenderingRobotAndObject() {
+        // Загружаем моки для Graphics
+        Graphics g = Mockito.mock(Graphics.class);
+        gameVisualizer.paint(g);  // Рисуем панель
+
+        // Проверяем, что отрисовка робота и объекта прошла без ошибок
+        Mockito.verify(g, Mockito.atLeastOnce()).drawImage(Mockito.any(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(), Mockito.any());
     }
 }
