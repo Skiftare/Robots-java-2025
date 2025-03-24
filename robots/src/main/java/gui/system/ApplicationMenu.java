@@ -57,9 +57,8 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenuItem createSaveMenuItem() {
         JMenuItem saveItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.save"), KeyEvent.VK_S);
         saveItem.addActionListener(event -> {
-            GameSaver.saveGameState(mainFrame.getGameWindow().getGameVisualizer().getRobot(),
-                    mainFrame.getGameWindow().getGameVisualizer().getMovableObject());
-            MessageDisplayer.showCenteredMessage(mainFrame, "message.saved"); // Показываем сообщение
+            GameSaver.saveGameState(mainFrame.getGameWindow().getGameVisualizer().getGameObjects());
+            MessageDisplayer.showCenteredMessage(mainFrame, "message.saved");
         });
         return saveItem;
     }
@@ -67,10 +66,12 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenuItem createLoadMenuItem() {
         JMenuItem loadItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.load"), KeyEvent.VK_L);
         loadItem.addActionListener(event -> {
-            GameLoader.loadGameState(mainFrame.getGameWindow().getGameVisualizer().getRobot(),
-                    mainFrame.getGameWindow().getGameVisualizer().getMovableObject());
-            mainFrame.getGameWindow().getGameVisualizer().repaint(); // Перерисовываем карту после загрузки
-            MessageDisplayer.showCenteredMessage(mainFrame, "message.loaded"); // Показываем сообщение
+            if (GameLoader.loadGameState(mainFrame.getGameWindow().getGameVisualizer())) {
+                mainFrame.getGameWindow().getGameVisualizer().repaint(); // Перерисовываем карту после загрузки
+                MessageDisplayer.showCenteredMessage(mainFrame, "message.loaded");
+            } else {
+                MessageDisplayer.showCenteredMessage(mainFrame, "message.load.failed");
+            }
         });
         return loadItem;
     }

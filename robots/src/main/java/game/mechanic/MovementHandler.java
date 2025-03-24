@@ -123,4 +123,14 @@ public class MovementHandler {
         }
         return null;
     }
+
+     //Удаляет объект из игрового мира
+    public void removeGameObject(GameObject object) {
+        gameObjects.remove(object);
+    }
+
+    //Удаляет все объекты из игрового мира
+    public void clearGameObjects() {
+        gameObjects.clear();
+    }
 }

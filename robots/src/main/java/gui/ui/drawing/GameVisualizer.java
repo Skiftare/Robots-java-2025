@@ -120,29 +120,32 @@ public class GameVisualizer extends JPanel {
         for (GameObject obj : movementHandler.getGameObjects()) {
             obj.draw(g2d, cellSize, start);
         }
-
         g2d.setTransform(originalTransform);
     }
 
-    /**
-     * Методы для совместимости с существующими тестами
-     */
-    public model.Robot getRobot() {
-        GameObject player = movementHandler.getPlayerObject();
-        if (player != null) {
-            model.Robot legacyRobot = new model.Robot(0, 0, 0);
-            legacyRobot.setPositionInCell(player.getPosition()[0], player.getPosition()[1]);
-            return legacyRobot;
-        }
-        return new model.Robot(0, 0, 0);
-    }
 
-    public GameObject getMovableObject() {
+    public ArrayList<GameObject> getMovableObjects() {
+        ArrayList<GameObject> arr = new ArrayList<>();
         for (GameObject obj : movementHandler.getGameObjects()) {
             if (obj.hasProperty(ObjectProperty.PUSHABLE)) {
-                return obj;
+                arr.add(obj);
             }
         }
-        return null;
+        return new ArrayList<>(arr);
+    }
+    public ArrayList<GameObject> getGameObjects() {
+        return new ArrayList<>(movementHandler.getGameObjects());
+    }
+    public void updateGameObjects(ArrayList<GameObject> newObjects) {
+        // Очищаем список объектов в движке
+        movementHandler.clearGameObjects();
+
+        // Добавляем новые объекты
+        for (GameObject obj : newObjects) {
+            movementHandler.addGameObject(obj);
+        }
+
+        // Перерисовываем игровое поле
+        repaint();
     }
 }
