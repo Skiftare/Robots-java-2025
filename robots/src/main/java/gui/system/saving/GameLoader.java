@@ -1,36 +1,61 @@
 package gui.system.saving;
-import model.Robot;
-import gui.ui.MovableObject;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import game.model.GameObject;
+import gui.ui.GameState;
+import gui.ui.drawing.GameVisualizer;
+import log.Logger;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GameLoader {
-    public static void loadGameState(Robot robot, MovableObject movableObject) {
-        try {
-            // Читаем строку из файла
-            File saveFile = new File("savegame.txt");
-            BufferedReader reader = new BufferedReader(new FileReader(saveFile));
-            String saveData = reader.readLine();
-            reader.close();
+    /**
+     * Load game from specified save file name
+     */
+    public static boolean loadGameState(GameVisualizer gameVisualizer, String fileName) {
+        // First try user home directory
+        String userHome = System.getProperty("user.home");
+        Path savePath = Paths.get(userHome, GameSaver.SAVE_DIR, fileName);
 
-            if (saveData != null) {
-                String[] coordinates = saveData.split(",");
-
-                // Извлекаем координаты робота и объекта
-                int robotX = Integer.parseInt(coordinates[0]);
-                int robotY = Integer.parseInt(coordinates[1]);
-                int objectX = Integer.parseInt(coordinates[2]);
-                int objectY = Integer.parseInt(coordinates[3]);
-
-                // Восстанавливаем позиции робота и объекта
-                robot.setPositionInCell(robotX, robotY);
-                movableObject.setPosition(objectX, objectY);
+        if (!Files.exists(savePath)) {
+            // If not found, try current directory
+            savePath = Paths.get(fileName);
+            if (!Files.exists(savePath)) {
+                Logger.error("Save file not found: " + fileName);
+                return false;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+
+        try (ObjectInputStream ois = new ObjectInputStream(
+                new BufferedInputStream(new FileInputStream(savePath.toFile())))) {
+
+            GameState state = (GameState) ois.readObject();
+            gameVisualizer.updateGameObjects(state.getGameObjects());
+            return true;
+        } catch (Exception e) {
+            Logger.error("Failed to load game: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Load last saved game
+     */
+    public static boolean loadLastSave(GameVisualizer gameVisualizer) {
+        List<String> saveFiles = GameSaver.getSaveFiles();
+        if (saveFiles.isEmpty()) {
+            return false;
+        }
+
+        // Get most recent save (assuming filenames sort chronologically)
+        saveFiles.sort((a, b) -> b.compareTo(a));
+        return loadGameState(gameVisualizer, saveFiles.get(0));
     }
 }

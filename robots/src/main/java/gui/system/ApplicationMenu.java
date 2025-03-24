@@ -4,6 +4,7 @@ import gui.MainApplicationFrame;
 import gui.system.localization.Language;
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
+import gui.system.saving.SaveLoadDialog;
 import log.Logger;
 import gui.system.saving.GameSaver;
 import gui.system.saving.GameLoader;
@@ -57,9 +58,7 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenuItem createSaveMenuItem() {
         JMenuItem saveItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.save"), KeyEvent.VK_S);
         saveItem.addActionListener(event -> {
-            GameSaver.saveGameState(mainFrame.getGameWindow().getGameVisualizer().getRobot(),
-                    mainFrame.getGameWindow().getGameVisualizer().getMovableObject());
-            MessageDisplayer.showCenteredMessage(mainFrame, "message.saved"); // Показываем сообщение
+            SaveLoadDialog.showSaveDialog(mainFrame, mainFrame.getGameWindow().getGameVisualizer());
         });
         return saveItem;
     }
@@ -67,10 +66,7 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenuItem createLoadMenuItem() {
         JMenuItem loadItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.load"), KeyEvent.VK_L);
         loadItem.addActionListener(event -> {
-            GameLoader.loadGameState(mainFrame.getGameWindow().getGameVisualizer().getRobot(),
-                    mainFrame.getGameWindow().getGameVisualizer().getMovableObject());
-            mainFrame.getGameWindow().getGameVisualizer().repaint(); // Перерисовываем карту после загрузки
-            MessageDisplayer.showCenteredMessage(mainFrame, "message.loaded"); // Показываем сообщение
+            SaveLoadDialog.showLoadDialog(mainFrame, mainFrame.getGameWindow().getGameVisualizer());
         });
         return loadItem;
     }
