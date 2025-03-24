@@ -3,7 +3,6 @@ package gui.system.saving;
 import game.model.GameObject;
 import game.model.ObjectProperty;
 import gui.ui.drawing.GameVisualizer;
-import log.Logger;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,7 +51,6 @@ public class GameLoader {
                         ObjectProperty property = ObjectProperty.valueOf(parts[j]);
                         obj.addProperty(property);
                     } catch (IllegalArgumentException e) {
-                        Logger.debug("Неизвестное свойство объекта: " + parts[j]);
                     }
                 }
 

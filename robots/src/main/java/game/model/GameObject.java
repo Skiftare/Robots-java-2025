@@ -36,6 +36,7 @@ public class GameObject {
         return new int[]{cellX, cellY};
     }
 
+
     public Image getTexture() {
         return texture;
     }
