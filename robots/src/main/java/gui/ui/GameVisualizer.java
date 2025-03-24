@@ -1,148 +1,131 @@
 package gui.ui;
 
 import model.Robot;
-import model.Target;
 
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.BasicStroke;
-import java.util.Timer;
-import java.util.TimerTask;
+import javax.swing.AbstractAction;
 import javax.swing.JPanel;
-import log.Logger;
+import javax.swing.KeyStroke;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.nio.file.Paths;
 
 import static model.Robot.*;
 
 public class GameVisualizer extends JPanel {
     private final Robot robot;
-    private final Target target;
-
     private int panelWidth = 0;
     private int panelHeight = 0;
     private boolean isPanelInitialized = false;
 
-    // Для отладки - показывать ли дополнительную информацию
-    private static final boolean SHOW_DEBUG_INFO = false;
+    // Экземпляр координатной сетки (например, 20x20)
+    private final CoordinateGrid grid;
 
-    // Минимальное расстояние, при котором считается, что робот достиг цели
-    private static final double TARGET_REACHED_DISTANCE = 1.0;
+    // Массив для хранения объектов на клетках
+    private final Object[][] objects;
+
+    // Изображение робота
+    private Image robotImage;
+    private double robotImageWidth;
+    private double robotImageHeight;
+
+    // Новый объект, который можно толкать
+    private MovableObject movableObject;
 
     public GameVisualizer() {
-        Timer timer = new Timer("events generator", true);
-        this.robot = new Robot(100, 100, 0);
-        this.target = new Target(150, 100);
+        // Инициализируем робота с начальными координатами в клетке
+        this.robot = new Robot(0, 0, 0);
+        // Инициализируем координатную сетку (20 столбцов и 20 строк)
+        this.grid = new CoordinateGrid(20, 20);
 
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                onRedrawEvent();
-            }
-        }, 0, 10);
+        // Создаём массив объектов для каждой клетки
+        this.objects = new Object[grid.getRows()][grid.getColumns()];
 
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                onModelUpdateEvent();
-            }
-        }, 0, 10);
+        // Настраиваем обработку нажатий клавиш
+        setFocusable(true);
+        requestFocusInWindow();
+        setupKeyBindings();
 
-        addMouseListener(new MouseAdapter() {
+        // Загружаем изображение робота
+        try {
+            String imagePath = Paths.get("robots/src/main/resources/robot.png").toString();
+            robotImage = ImageIO.read(new File(imagePath));
+            robotImageWidth = robotImage.getWidth(null);
+            robotImageHeight = robotImage.getHeight(null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Добавляем новый объект с текстурой в клетку (например, клетка (5, 5))
+        movableObject = new MovableObject(5, 5, "robots/src/main/resources/object.png");
+    }
+
+    /**
+     * Настройка привязок клавиш для управления роботом.
+     */
+    private void setupKeyBindings() {
+        // Стрелка вверх
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("UP"), "moveUp");
+        getActionMap().put("moveUp", new AbstractAction() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                setTargetPosition(e.getPoint());
-                repaint();
+            public void actionPerformed(ActionEvent e) {
+                moveRobotInCells(0, -1);
             }
         });
-        setDoubleBuffered(true);
-    }
-
-    protected void setTargetPosition(Point p) {
-        target.setPosition(p.x, p.y);
-        Logger.debug("Target set to: " + p.x + ", " + p.y);
-    }
-
-    protected void onRedrawEvent() {
-        EventQueue.invokeLater(this::repaint);
-    }
-
-    // Евклидово расстояние между двумя точками
-    private static double distance(double x1, double y1, double x2, double y2) {
-        double diffX = x1 - x2;
-        double diffY = y1 - y2;
-        return Math.sqrt(diffX * diffX + diffY * diffY);
-    }
-
-    private static double angleTo(double fromX, double fromY, double toX, double toY) {
-        double diffX = toX - fromX;
-        double diffY = toY - fromY;
-        return Math.atan2(diffY, diffX);
-    }
-
-    protected void onModelUpdateEvent() {
-        if (!isPanelInitialized) return;
-
-        double distanceToTarget = distance(target.getX(), target.getY(),
-                robot.getPositionX(), robot.getPositionY());
-
-        if (distanceToTarget < TARGET_REACHED_DISTANCE) {
-            return;
-        }
-
-        double angleToTarget = angleTo(robot.getPositionX(), robot.getPositionY(),
-                target.getX(), target.getY());
-
-        double robotDirection = normalizeAngle(robot.getDirection());
-        angleToTarget = normalizeAngle(angleToTarget);
-
-        double angleDiff = normalizeAngleDifference(angleToTarget - robotDirection);
-
-        double angularVelocity = 0;
-        if (Math.abs(angleDiff) > 0.02) { // примерно 1 градус
-            if (angleDiff > 0) {
-                angularVelocity = Robot.getMaxAngularVelocity();
-            } else {
-                angularVelocity = -Robot.getMaxAngularVelocity();
+        // Стрелка вниз
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("DOWN"), "moveDown");
+        getActionMap().put("moveDown", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                moveRobotInCells(0, 1);
             }
-        }
-
-        double velocity;
-        if (Math.abs(angleDiff) > Math.PI / 6) {
-            velocity = Robot.getMaxVelocity() * 0.3;
-        } else if (Math.abs(angleDiff) > Math.PI / 18) {
-            velocity = Robot.getMaxVelocity() * 0.7;
-        } else {
-            velocity = Robot.getMaxVelocity();
-        }
-
-        robot.move(velocity, angularVelocity, 10, panelWidth, panelHeight);
+        });
+        // Стрелка влево
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("LEFT"), "moveLeft");
+        getActionMap().put("moveLeft", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                moveRobotInCells(-1, 0);
+            }
+        });
+        // Стрелка вправо
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("RIGHT"), "moveRight");
+        getActionMap().put("moveRight", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                moveRobotInCells(1, 0);
+            }
+        });
     }
 
-    // Нормализация угла в диапазон [-PI, PI]
-    private static double normalizeAngle(double angle) {
-        while (angle > Math.PI) angle -= 2 * Math.PI;
-        while (angle < -Math.PI) angle += 2 * Math.PI;
-        return angle;
-    }
+    /**
+     * Перемещает робота на одну клетку в направлении (dx, dy).
+     * Телепортация реализована, если робот выходит за пределы сетки.
+     *
+     * @param dx изменение по горизонтали (-1, 0, 1)
+     * @param dy изменение по вертикали (-1, 0, 1)
+     */
+    private void moveRobotInCells(int dx, int dy) {
+        // Получаем текущие координаты робота
+        int[] robotPosition = robot.getPositionInCell();
+        int robotCellX = robotPosition[0];
+        int robotCellY = robotPosition[1];
 
-    // Нормализация разницы углов для кратчайшего пути
-    private static double normalizeAngleDifference(double angleDiff) {
-        angleDiff = normalizeAngle(angleDiff);
-        if (angleDiff > Math.PI) {
-            angleDiff -= 2 * Math.PI;
-        } else if (angleDiff < -Math.PI) {
-            angleDiff += 2 * Math.PI;
+        // Проверяем, есть ли объект в клетке, в которую будет двигаться робот
+        int newRobotCellX = robotCellX + dx;
+        int newRobotCellY = robotCellY + dy;
+
+        // Если объект в соседней клетке, толкаем его
+        if (movableObject.getPosition()[0] == newRobotCellX && movableObject.getPosition()[1] == newRobotCellY) {
+            movableObject.setPosition(movableObject.getPosition()[0] + dx, movableObject.getPosition()[1] + dy);
         }
-        return angleDiff;
-    }
 
-    private static int round(double value) {
-        return (int) (value + 0.5);
+        // Перемещаем робота
+        robot.move(dx, dy, grid.getColumns(), grid.getRows());
+        repaint();
     }
 
     @Override
@@ -151,24 +134,35 @@ public class GameVisualizer extends JPanel {
 
         panelWidth = this.getWidth();
         panelHeight = this.getHeight();
-
         if (!isPanelInitialized) {
             isPanelInitialized = true;
+            // Устанавливаем робота в центр центральной клетки
+            Point start = grid.getStartCoordinates(panelWidth, panelHeight);
+            int cellSize = grid.getCellSize(panelWidth, panelHeight);
+            int centerCellX = grid.getColumns() / 2;
+            int centerCellY = grid.getRows() / 2;
+            robot.setPositionInCell(centerCellX, centerCellY);
         }
 
         Graphics2D g2d = (Graphics2D) g;
-
         AffineTransform originalTransform = g2d.getTransform();
 
+        // Отрисовка фона
+        g2d.setColor(new Color(50, 50, 50));  // Темный фон
+        g2d.fillRect(0, 0, panelWidth, panelHeight);
 
-        drawTarget(g2d, target.getX(), target.getY());
+        // Отрисовка координатной сетки с более темными линиями
+        g2d.setColor(new Color(100, 100, 100));  // Темная сетка
+        grid.drawGrid(g2d, panelWidth, panelHeight);
 
-        drawRobot(g2d, robot.getPositionX(), robot.getPositionY(), robot.getDirection());
+        // Отрисовка робота с текстурой
+        drawRobot(g2d, robot.getPositionInCell()[0], robot.getPositionInCell()[1]);
+
+        // Отрисовка объекта с текстурой
+        movableObject.draw(g2d, grid.getCellSize(panelWidth, panelHeight), grid.getStartCoordinates(panelWidth, panelHeight));
 
         g2d.setTransform(originalTransform);
     }
-
-
 
     private static void fillOval(Graphics g, int centerX, int centerY, int diam1, int diam2) {
         g.fillOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
@@ -178,30 +172,30 @@ public class GameVisualizer extends JPanel {
         g.drawOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
     }
 
-    private void drawRobot(Graphics2D g, double x, double y, double direction) {
-        AffineTransform currentTransform = g.getTransform();
+    private void drawRobot(Graphics2D g, int cellX, int cellY) {
+        int cellSize = grid.getCellSize(panelWidth, panelHeight);
+        Point start = grid.getStartCoordinates(panelWidth, panelHeight);
 
-        g.translate(x, y);
-        g.rotate(direction);
+        // Пропорциональное изменение размера изображения робота, чтобы оно не растягивалось
+        int robotWidth = (int) (robotImageWidth * (cellSize / 30.0));  // Пропорционально размеру клетки
+        int robotHeight = (int) (robotImageHeight * (cellSize / 30.0));
 
-        g.setColor(Color.MAGENTA);
-        fillOval(g, 0, 0, ROBOT_WIDTH, ROBOT_HEIGHT);
-        g.setColor(Color.BLACK);
-        drawOval(g, 0, 0, ROBOT_WIDTH, ROBOT_HEIGHT);
+        // Ограничиваем размер изображения, чтобы оно помещалось в клетку
+        robotWidth = Math.min(robotWidth, cellSize);
+        robotHeight = Math.min(robotHeight, cellSize);
 
-        g.setColor(Color.WHITE);
-        fillOval(g, EYE_OFFSET_X, 0, EYE_SIZE, EYE_SIZE);
-        g.setColor(Color.BLACK);
-        drawOval(g, EYE_OFFSET_X, 0, EYE_SIZE, EYE_SIZE);
-
-        g.setTransform(currentTransform);
+        // Отрисовка робота с текстурой
+        int x = start.x + cellX * cellSize + cellSize / 2 - robotWidth / 2;
+        int y = start.y + cellY * cellSize + cellSize / 2 - robotHeight / 2;
+        g.drawImage(robotImage, x, y, robotWidth, robotHeight, null);
     }
 
-
-    private void drawTarget(Graphics2D g, int x, int y) {
-        g.setColor(Color.GREEN);
-        fillOval(g, x, y, 5, 5);
-        g.setColor(Color.BLACK);
-        drawOval(g, x, y, 5, 5);
+    public Robot getRobot() {
+        return robot;
     }
+
+    public MovableObject getMovableObject() {
+        return movableObject;
+    }
+
 }
