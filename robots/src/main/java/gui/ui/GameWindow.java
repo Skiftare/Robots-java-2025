@@ -2,6 +2,8 @@ package gui.ui;
 
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
+import gui.ui.drawing.GameVisualizer;
+
 import javax.swing.*;
 import java.awt.*;
 

@@ -14,6 +14,14 @@ public class Target {
         this.y = y;
     }
 
+    // New method with boundary checking
+    public void setPositionWithBounds(int x, int y, int columns, int rows) {
+        if (x >= 0 && x < columns && y >= 0 && y < rows) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
     public int getX() {
         return x;
     }

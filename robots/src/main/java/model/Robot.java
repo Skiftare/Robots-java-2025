@@ -34,13 +34,17 @@ public class Robot {
     }
 
     public void move(int dx, int dy, int columns, int rows) {
-        cellX += dx;
-        cellY += dy;
+        // Calculate potential new position
+        int newX = cellX + dx;
+        int newY = cellY + dy;
 
-        // Телепортация при выходе за границы
-        if (cellX < 0) cellX = columns - 1;
-        if (cellX >= columns) cellX = 0;
-        if (cellY < 0) cellY = rows - 1;
-        if (cellY >= rows) cellY = 0;
+        //Не-выход за рамки
+        if (newX >= 0 && newX < columns) {
+            cellX = newX;
+        }
+
+        if (newY >= 0 && newY < rows) {
+            cellY = newY;
+        }
     }
 }

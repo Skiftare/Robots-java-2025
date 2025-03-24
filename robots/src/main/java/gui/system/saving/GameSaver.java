@@ -1,7 +1,7 @@
 package gui.system.saving;
 
 import model.Robot;
-import gui.ui.MovableObject;
+import game.model.GameObject;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -9,11 +9,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class GameSaver {
-    public static void saveGameState(Robot robot, MovableObject movableObject) {
+    public static void saveGameState(Robot robot, GameObject gameObject) {
         try {
             // Получаем текущие координаты робота и объекта
             int[] robotPosition = robot.getPositionInCell();
-            int[] objectPosition = movableObject.getPosition();
+            int[] objectPosition = gameObject.getPosition();
 
             // Преобразуем координаты в строку
             String saveData = robotPosition[0] + "," + robotPosition[1] + "," +

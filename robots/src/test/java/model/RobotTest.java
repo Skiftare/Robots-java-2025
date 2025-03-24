@@ -1,49 +1,73 @@
 package model;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RobotTest {
     private Robot robot;
-    private static final int PANEL_WIDTH = 800;
-    private static final int PANEL_HEIGHT = 600;
+    private static final int COLUMNS = 10;
+    private static final int ROWS = 10;
 
+    @BeforeEach
+    public void setUp() {
+        robot = new Robot(5, 5, 0);
+    }
 
     @Test
     public void testInitialPosition() {
-        robot = new Robot(100, 100, 0);
-        assertEquals(100, robot.getPositionX(), "Initial X position should be 100");
-        assertEquals(100, robot.getPositionY(), "Initial Y position should be 100");
-        assertEquals(0, robot.getDirection(), "Initial direction should be 0");
+        robot = new Robot(3, 4, 1.5);
+        int[] position = robot.getPositionInCell();
+
+        assertArrayEquals(new int[]{3, 4}, position, "Initial position should be (3,4)");
+        assertEquals(1.5, robot.getDirection(), 0.001, "Initial direction should be 1.5");
+    }
+
+    @Test
+    public void testSetPosition() {
+        robot.setPositionInCell(7, 8);
+        int[] position = robot.getPositionInCell();
+
+        assertArrayEquals(new int[]{7, 8}, position, "Position should be updated to (7,8)");
+    }
+
+    @Test
+    public void testSetDirection() {
+        robot.setDirection(2.5);
+        assertEquals(2.5, robot.getDirection(), 0.001, "Direction should be updated to 2.5");
     }
 
     @Test
     public void testMovement() {
-        robot = new Robot(100, 100, 0);
-        robot.move(0.1, 0, 10, PANEL_WIDTH, PANEL_HEIGHT);
-        assertTrue(robot.getPositionX() > 100);
-        assertEquals(100, robot.getPositionY());
+        robot = new Robot(5, 5, 0);
+        robot.move(2, 3, COLUMNS, ROWS);
+        int[] position = robot.getPositionInCell();
+
+        assertArrayEquals(new int[]{7, 8}, position, "Robot should move to (7,8)");
     }
 
     @Test
-    public void testVelocityLimits() {
-        robot = new Robot(100, 100, 0);
+    public void testBoundaryLimits() {
+        // Test right edge boundary
+        robot = new Robot(9, 5, 0);
+        robot.move(2, 0, COLUMNS, ROWS);
+        assertArrayEquals(new int[]{9, 5}, robot.getPositionInCell(), "Robot should stay at right edge");
 
-        double maxVelocity = Robot.getMaxVelocity();
-        robot.move(maxVelocity * 2, 0, 10, PANEL_WIDTH, PANEL_HEIGHT);
+        // Test left edge boundary
+        robot = new Robot(0, 5, 0);
+        robot.move(-1, 0, COLUMNS, ROWS);
+        assertArrayEquals(new int[]{0, 5}, robot.getPositionInCell(), "Robot should stay at left edge");
 
-        double expectedMaxDistance = maxVelocity * 10 + 100; // Initial position + max movement
-        assertTrue(robot.getPositionX() <= expectedMaxDistance);
-    }
+        // Test bottom edge boundary
+        robot = new Robot(5, 9, 0);
+        robot.move(0, 2, COLUMNS, ROWS);
+        assertArrayEquals(new int[]{5, 9}, robot.getPositionInCell(), "Robot should stay at bottom edge");
 
-    @Test
-    public void testAngularVelocityLimits() {
-        robot = new Robot(100, 100, 0);
-        double maxAngularVelocity = Robot.getMaxAngularVelocity();
-        robot.move(0.1, maxAngularVelocity * 2, 10, PANEL_WIDTH, PANEL_HEIGHT);
-
-        assertTrue(robot.getDirection() <= maxAngularVelocity * 10);
+        // Test top edge boundary
+        robot = new Robot(5, 0, 0);
+        robot.move(0, -1, COLUMNS, ROWS);
+        assertArrayEquals(new int[]{5, 0}, robot.getPositionInCell(), "Robot should stay at top edge");
     }
 }
