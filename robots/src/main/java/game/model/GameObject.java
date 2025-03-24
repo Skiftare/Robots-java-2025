@@ -1,15 +1,17 @@
 package game.model;
 
-import gui.system.rectoring.ResourceLoader;
+import gui.system.saving.ResourceLoader;
 
 import java.awt.*;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.Set;
 
-public class GameObject {
+public class GameObject implements Serializable {
     private int cellX;
     private int cellY;
-    private Image texture;
+    private transient Image texture;
     private String texturePath;
     private String label;
     private String type; // Тип объекта (например, "wall", "baba", "flag")
@@ -34,6 +36,10 @@ public class GameObject {
 
     public int[] getPosition() {
         return new int[]{cellX, cellY};
+    }
+    public void setTexture(Image texture, String path) {
+        this.texture = texture;
+        this.texturePath = path;
     }
 
 
@@ -84,6 +90,16 @@ public class GameObject {
             int textHeight = fm.getHeight();
             g.drawString(label, x + (objectWidth - textWidth) / 2,
                     y + (objectHeight + textHeight) / 2 - fm.getDescent());
+        }
+    }
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        if (texturePath != null) {
+            this.texture = ResourceLoader.getInstance().loadImage(texturePath);
         }
     }
 }

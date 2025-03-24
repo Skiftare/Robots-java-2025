@@ -1,4 +1,4 @@
-package gui.system.rectoring;
+package gui.system.saving;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

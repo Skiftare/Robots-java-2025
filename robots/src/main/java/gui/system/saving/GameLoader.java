@@ -1,86 +1,61 @@
 package gui.system.saving;
 
 import game.model.GameObject;
-import game.model.ObjectProperty;
+import gui.ui.GameState;
 import gui.ui.drawing.GameVisualizer;
+import log.Logger;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 public class GameLoader {
-    public static boolean loadGameState(GameVisualizer gameVisualizer) {
-        File saveFile = new File("savegame.txt");
-        if (!saveFile.exists()) {
-            return false;
+    /**
+     * Load game from specified save file name
+     */
+    public static boolean loadGameState(GameVisualizer gameVisualizer, String fileName) {
+        // First try user home directory
+        String userHome = System.getProperty("user.home");
+        Path savePath = Paths.get(userHome, GameSaver.SAVE_DIR, fileName);
+
+        if (!Files.exists(savePath)) {
+            // If not found, try current directory
+            savePath = Paths.get(fileName);
+            if (!Files.exists(savePath)) {
+                Logger.error("Save file not found: " + fileName);
+                return false;
+            }
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(saveFile))) {
-            // Очищаем текущие объекты
-            ArrayList<GameObject> currentObjects = gameVisualizer.getGameObjects();
-            ArrayList<GameObject> newObjects = new ArrayList<>();
+        try (ObjectInputStream ois = new ObjectInputStream(
+                new BufferedInputStream(new FileInputStream(savePath.toFile())))) {
 
-            // Читаем количество объектов
-            int count = Integer.parseInt(reader.readLine());
-
-            // Читаем каждый объект
-            for (int i = 0; i < count; i++) {
-                String line = reader.readLine();
-                String[] parts = line.split(",");
-
-                int x = Integer.parseInt(parts[0]);
-                int y = Integer.parseInt(parts[1]);
-                String type = parts[2];
-                String label = parts[3];
-                boolean hasTexture = "1".equals(parts[4]);
-
-                GameObject obj = findObjectByType(currentObjects, type);
-                if (obj == null) {
-                    String texturePath = getDefaultTextureForType(type);
-                    obj = new GameObject(x, y, texturePath, label, type);
-                } else {
-                    obj.setPosition(x, y);
-                }
-
-                // Очищаем свойства и добавляем новые
-                obj.clearProperties();
-                for (int j = 5; j < parts.length; j++) {
-                    try {
-                        ObjectProperty property = ObjectProperty.valueOf(parts[j]);
-                        obj.addProperty(property);
-                    } catch (IllegalArgumentException e) {
-                    }
-                }
-
-                newObjects.add(obj);
-            }
-
-            gameVisualizer.updateGameObjects(newObjects);
-
+            GameState state = (GameState) ois.readObject();
+            gameVisualizer.updateGameObjects(state.getGameObjects());
             return true;
-        } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            Logger.error("Failed to load game: " + e.getMessage());
             return false;
         }
     }
 
-    private static GameObject findObjectByType(ArrayList<GameObject> objects, String type) {
-        for (GameObject obj : objects) {
-            if (type.equals(obj.getType())) {
-                return obj;
-            }
+    /**
+     * Load last saved game
+     */
+    public static boolean loadLastSave(GameVisualizer gameVisualizer) {
+        List<String> saveFiles = GameSaver.getSaveFiles();
+        if (saveFiles.isEmpty()) {
+            return false;
         }
-        return null;
-    }
 
-    private static String getDefaultTextureForType(String type) {
-        return switch (type) {
-            case "player" -> "robots/src/main/resources/robot.png";
-            case "box" -> "robots/src/main/resources/object.png";
-            case "wall" -> "robots/src/main/resources/wall.png";
-            default -> null;
-        };
+        // Get most recent save (assuming filenames sort chronologically)
+        saveFiles.sort((a, b) -> b.compareTo(a));
+        return loadGameState(gameVisualizer, saveFiles.get(0));
     }
 }

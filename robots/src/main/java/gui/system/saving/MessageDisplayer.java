@@ -10,7 +10,7 @@ public class MessageDisplayer {
     public static void showCenteredMessage(JFrame parentFrame, String messageKey) {
         // Получаем локализованный текст для сообщения и заголовка
         String message = LocalizationManager.getInstance().getString(messageKey);
-        String title = LocalizationManager.getInstance().getString("message.info");
+        String title = LocalizationManager.getInstance().getString("save.message.info");
 
         // Создаём панель с выравниванием текста по центру
         JPanel panel = new JPanel(new BorderLayout());
@@ -39,4 +39,6 @@ public class MessageDisplayer {
         // Показываем диалог
         dialog.setVisible(true);
     }
+
+
 }

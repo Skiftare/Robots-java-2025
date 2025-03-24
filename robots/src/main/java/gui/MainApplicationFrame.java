@@ -66,7 +66,12 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     }
 
     public GameWindow getGameWindow() {
-        return (GameWindow) desktopPane.getComponent(0);  // Получаем GameWindow из desktopPane
+        for (JInternalFrame frame : desktopPane.getAllFrames()) {
+            if (frame instanceof GameWindow) {
+                return (GameWindow) frame;
+            }
+        }
+        return null;
     }
 
     void resizeInternalFrames() {
