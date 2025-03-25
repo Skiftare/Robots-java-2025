@@ -5,6 +5,7 @@ import game.model.ObjectProperty;
 import gui.ui.CoordinateGrid;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class MovementHandler {
@@ -23,45 +24,62 @@ public class MovementHandler {
         return new ArrayList<>(gameObjects);
     }
 
-    public GameObject getPlayerObject() {
+    public ArrayList<GameObject> getPlayerObjects() {
+        ArrayList<GameObject> players = new ArrayList<>();
         for (GameObject obj : gameObjects) {
             if (obj.hasProperty(ObjectProperty.PLAYER)) {
-                return obj;
+                players.add(obj);
             }
         }
-        return null;
+        return players;
     }
 
-    public boolean movePlayer(int dx, int dy) {
-        GameObject player = getPlayerObject();
-        if (player == null || (dx == 0 && dy == 0)) {
+    public boolean movePlayers(int dx, int dy) {
+        List<GameObject> players = getPlayerObjects();
+        if (players.isEmpty() || (dx == 0 && dy == 0)) {
             return false;
         }
 
-        int[] playerPosition = player.getPosition();
-        int playerX = playerPosition[0];
-        int playerY = playerPosition[1];
-        int newPlayerX = playerX + dx;
-        int newPlayerY = playerY + dy;
-
-        // Проверка границ
-        if (newPlayerX < 0 || newPlayerX >= grid.getColumns() ||
-                newPlayerY < 0 || newPlayerY >= grid.getRows()) {
-            return false;
+        if (dx > 0) {
+            players.sort((p1, p2) -> p2.getPosition()[0] - p1.getPosition()[0]);
+        } else if (dx < 0) {
+            players.sort(Comparator.comparingInt(p -> p.getPosition()[0]));
+        } else if (dy > 0) {
+            players.sort((p1, p2) -> p2.getPosition()[1] - p1.getPosition()[1]);
+        } else {
+            players.sort(Comparator.comparingInt(p -> p.getPosition()[1]));
         }
 
-        // Проверка пути и толкание объектов если нужно
-        if (!isPathClearOrPushable(playerX, playerY, dx, dy)) {
-            return false; // Путь заблокирован
+        boolean anyPlayerMoved = false;
+
+        // Process each player independently
+        for (GameObject player : players) {
+            int[] playerPosition = player.getPosition();
+            int playerX = playerPosition[0];
+            int playerY = playerPosition[1];
+            int newPlayerX = playerX + dx;
+            int newPlayerY = playerY + dy;
+
+            // Check boundaries
+            if (newPlayerX < 0 || newPlayerX >= grid.getColumns() ||
+                    newPlayerY < 0 || newPlayerY >= grid.getRows()) {
+                continue; // Skip this player
+            }
+
+            // Check path and push objects if needed
+            if (!isPathClearOrPushable(playerX, playerY, dx, dy)) {
+                continue; // Path blocked for this player
+            }
+
+            // Move this player
+            player.setPosition(newPlayerX, newPlayerY);
+            anyPlayerMoved = true;
+
+            // Check for special interactions
+            checkInteractions(player);
         }
 
-        // Перемещение игрока
-        player.setPosition(newPlayerX, newPlayerY);
-
-        // Проверка на специальные взаимодействия (например, WIN или KILL)
-        checkInteractions(player);
-
-        return true;
+        return anyPlayerMoved;
     }
 
     private void checkInteractions(GameObject player) {
@@ -124,7 +142,7 @@ public class MovementHandler {
         return null;
     }
 
-     //Удаляет объект из игрового мира
+    //Удаляет объект из игрового мира
     public void removeGameObject(GameObject object) {
         gameObjects.remove(object);
     }

@@ -6,6 +6,10 @@ import gui.ui.CoordinateGrid;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class MovementHandlerTest {
@@ -41,12 +45,12 @@ class MovementHandlerTest {
     @Test
     void testBasicPlayerMovement() {
         // Перемещение игрока вправо
-        boolean moved = movementHandler.movePlayer(1, 0);
+        boolean moved = movementHandler.movePlayers(1, 0);
         assertTrue(moved, "Игрок должен переместиться вправо");
         assertArrayEquals(new int[]{11, 10}, player.getPosition(), "Позиция игрока должна обновиться");
 
         // Перемещение игрока влево
-        moved = movementHandler.movePlayer(-1, 0);
+        moved = movementHandler.movePlayers(-1, 0);
         assertTrue(moved, "Игрок должен переместиться влево");
         assertArrayEquals(new int[]{10, 10}, player.getPosition(), "Позиция игрока должна вернуться");
     }
@@ -55,9 +59,8 @@ class MovementHandlerTest {
     void testPushingObject() {
         // Размещаем игрока рядом с коробкой
         player.setPosition(11, 10);
-
         // Толкаем коробку вправо
-        boolean moved = movementHandler.movePlayer(1, 0);
+        boolean moved = movementHandler.movePlayers(1, 0);
         assertTrue(moved, "Игрок должен толкнуть коробку");
         assertArrayEquals(new int[]{12, 10}, player.getPosition(), "Позиция игрока должна обновиться");
         assertArrayEquals(new int[]{13, 10}, box.getPosition(), "Коробка должна сдвинуться");
@@ -69,7 +72,7 @@ class MovementHandlerTest {
         player.setPosition(9, 10);
 
         // Пытаемся пройти через стену
-        boolean moved = movementHandler.movePlayer(-1, 0);
+        boolean moved = movementHandler.movePlayers(-1, 0);
         assertFalse(moved, "Игрок не должен проходить через стену");
         assertArrayEquals(new int[]{9, 10}, player.getPosition(), "Позиция игрока не должна меняться");
         assertArrayEquals(new int[]{8, 10}, wall.getPosition(), "Позиция стены не должна меняться");
@@ -81,7 +84,7 @@ class MovementHandlerTest {
         player.setPosition(0, 0);
 
         // Пытаемся выйти за пределы карты
-        boolean moved = movementHandler.movePlayer(-1, 0);
+        boolean moved = movementHandler.movePlayers(-1, 0);
         assertFalse(moved, "Игрок не должен выходить за границы");
         assertArrayEquals(new int[]{0, 0}, player.getPosition(), "Позиция игрока не должна меняться");
     }
@@ -99,7 +102,7 @@ class MovementHandlerTest {
         box.setPosition(12, 10);
 
         // Толкаем цепочку коробок
-        boolean moved = movementHandler.movePlayer(1, 0);
+        boolean moved = movementHandler.movePlayers(1, 0);
         assertTrue(moved, "Игрок должен толкнуть цепочку коробок");
         assertArrayEquals(new int[]{12, 10}, player.getPosition(), "Позиция игрока должна обновиться");
         assertArrayEquals(new int[]{13, 10}, box.getPosition(), "Первая коробка должна сдвинуться");
@@ -114,7 +117,7 @@ class MovementHandlerTest {
         wall.setPosition(7, 12);
 
         // Пытаемся толкнуть коробку на стену
-        boolean moved = movementHandler.movePlayer(-1, 0);
+        boolean moved = movementHandler.movePlayers(-1, 0);
         assertFalse(moved, "Нельзя толкнуть коробку на стену");
         assertArrayEquals(new int[]{9, 12}, player.getPosition(), "Позиция игрока не должна меняться");
         assertArrayEquals(new int[]{8, 12}, box.getPosition(), "Позиция коробки не должна меняться");
@@ -122,7 +125,36 @@ class MovementHandlerTest {
 
     @Test
     void testGetPlayerObject() {
-        GameObject retrievedPlayer = movementHandler.getPlayerObject();
-        assertSame(player, retrievedPlayer, "Должен вернуть правильный объект игрока");
+        ArrayList<GameObject> retrievedPlayer = movementHandler.getPlayerObjects();
+        assertSame(player, retrievedPlayer.get(0), "Должен вернуть правильный объект игрока");
+    }
+    @Test
+    void testManyPlayerObjects() {
+        player.setPosition(9, 12);
+        GameObject player2 = new GameObject(9, 9, null, "Игрок", "player");
+        player2.addProperty(ObjectProperty.PLAYER);
+        movementHandler.addGameObject(player2);
+
+        box.setPosition(8, 12);
+        wall.setPosition(7, 12);
+
+        ArrayList<GameObject> retrievedPlayers = movementHandler.getPlayerObjects();
+        assertEquals(2, retrievedPlayers.size(), "Should have exactly two player objects");
+
+        Set<String> expectedPositions = Set.of("9,12", "9,9");
+        Set<String> actualPositions = retrievedPlayers.stream()
+                .map(obj -> obj.getPosition()[0] + "," + obj.getPosition()[1])
+                .collect(Collectors.toSet());
+        assertEquals(expectedPositions, actualPositions, "Player positions should match expected coordinates");
+
+        boolean moved = movementHandler.movePlayers(1, 0);
+        assertTrue(moved, "At least one player should move");
+
+        retrievedPlayers = movementHandler.getPlayerObjects();
+        Set<String> expectedPositionsAfterMove = Set.of("10,12", "10,9");
+        Set<String> actualPositionsAfterMove = retrievedPlayers.stream()
+                .map(obj -> obj.getPosition()[0] + "," + obj.getPosition()[1])
+                .collect(Collectors.toSet());
+        assertEquals(expectedPositionsAfterMove, actualPositionsAfterMove, "Both players should have moved right");
     }
 }
