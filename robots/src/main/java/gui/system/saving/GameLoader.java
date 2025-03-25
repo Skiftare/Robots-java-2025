@@ -1,18 +1,15 @@
 package gui.system.saving;
 
-import game.model.GameObject;
 import gui.ui.GameState;
 import gui.ui.drawing.GameVisualizer;
 import log.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 public class GameLoader {
@@ -37,7 +34,7 @@ public class GameLoader {
                 new BufferedInputStream(new FileInputStream(savePath.toFile())))) {
 
             GameState state = (GameState) ois.readObject();
-            gameVisualizer.updateGameObjects(state.getGameObjects());
+            gameVisualizer.rewriteGameObjects(state.getGameObjects());
             return true;
         } catch (Exception e) {
             Logger.error("Failed to load game: " + e.getMessage());

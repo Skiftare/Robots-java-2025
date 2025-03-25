@@ -32,11 +32,25 @@ public class GameVisualizer extends JPanel {
         player.addProperty(ObjectProperty.PLAYER);
         movementHandler.addGameObject(player);
 
+
+
+
+        GameObject player2 = new GameObject(2, 2,
+                "robots/src/main/resources/robot.png", "Игрок", "player");
+        player2.addProperty(ObjectProperty.PLAYER);
+        movementHandler.addGameObject(player2);
+
+
         // Создаем блок (бывший MovableObject)
-        GameObject box = new GameObject(5, 5, "robots/src/main/resources/object.png", "Ящик", "box");
-        box.addProperty(ObjectProperty.PUSHABLE);
-        box.addProperty(ObjectProperty.STOP);
-        movementHandler.addGameObject(box);
+        GameObject box1 = new GameObject(5, 5, "robots/src/main/resources/object.png", "Ящик", "box");
+        box1.addProperty(ObjectProperty.PUSHABLE);
+        box1.addProperty(ObjectProperty.STOP);
+        movementHandler.addGameObject(box1);
+
+        GameObject box2 = new GameObject(4, 4, "robots/src/main/resources/object.png", "Ящик", "box");
+        box2.addProperty(ObjectProperty.PUSHABLE);
+        box2.addProperty(ObjectProperty.STOP);
+        movementHandler.addGameObject(box2);
 
 
         GameObject wall = new GameObject(16,16, "robots/src/main/resources/wall.png", "Стена", "wall");
@@ -91,7 +105,7 @@ public class GameVisualizer extends JPanel {
     }
 
     void movePlayerInCells(int dx, int dy) {
-        movementHandler.movePlayer(dx, dy);
+        movementHandler.movePlayers(dx, dy);
         repaint();
     }
 
@@ -136,7 +150,7 @@ public class GameVisualizer extends JPanel {
     public ArrayList<GameObject> getGameObjects() {
         return new ArrayList<>(movementHandler.getGameObjects());
     }
-    public void updateGameObjects(ArrayList<GameObject> newObjects) {
+    public void rewriteGameObjects(ArrayList<GameObject> newObjects) {
         // Очищаем список объектов в движке
         movementHandler.clearGameObjects();
 

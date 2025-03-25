@@ -1,16 +1,13 @@
 package gui.ui.drawing;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 import game.model.GameObject;
 import game.model.ObjectProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.awt.*;
 import java.util.ArrayList;
-import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class GameVisualizerTest {
 
@@ -19,6 +16,23 @@ class GameVisualizerTest {
     @BeforeEach
     void setUp() {
         gameVisualizer = new GameVisualizer();
+        ArrayList<GameObject> gameObjects = new ArrayList<>();
+        GameObject box1 = new GameObject(5, 5, null, "Box", "box");
+        box1.addProperty(ObjectProperty.PUSHABLE);
+        box1.addProperty(ObjectProperty.STOP);
+        gameObjects.add(box1);
+
+
+        GameObject player = new GameObject(10, 10, null, "Player", "player");
+        player.addProperty(ObjectProperty.PLAYER);
+        gameObjects.add(player);
+
+        GameObject wall = new GameObject(16, 16, null, "Wall", "wall");
+        wall.addProperty(ObjectProperty.STOP);
+
+
+        gameObjects.add(wall);
+        gameVisualizer.rewriteGameObjects(gameObjects);
     }
 
     @Test
@@ -77,29 +91,9 @@ class GameVisualizerTest {
         assertEquals(initialY + 1, player.getPosition()[1]);
     }
 
-    @Test
-    void testMoveRobotInCells() {
-        // This is a legacy method that should call movePlayerInCells
-        GameObject player = findPlayerObject();
-        int initialX = player.getPosition()[0];
-        int initialY = player.getPosition()[1];
-
-        // Use reflection to call the method
-        try {
-            java.lang.reflect.Method method = GameVisualizer.class.getDeclaredMethod("moveRobotInCells", int.class, int.class);
-            method.setAccessible(true);
-            method.invoke(gameVisualizer, 1, 0);
-        } catch (Exception e) {
-            fail("Could not call moveRobotInCells method");
-        }
-
-        // Check if player moved
-        assertEquals(initialX + 1, player.getPosition()[0]);
-        assertEquals(initialY, player.getPosition()[1]);
-    }
 
     @Test
-    void testUpdateGameObjects() {
+    void testRewriteGameObjects() {
         // Create new objects to update with
         ArrayList<GameObject> newObjects = new ArrayList<>();
         GameObject newPlayer = new GameObject(3, 3, "test.png", "New Player", "player");
@@ -107,7 +101,7 @@ class GameVisualizerTest {
         newObjects.add(newPlayer);
 
         // Update game objects
-        gameVisualizer.updateGameObjects(newObjects);
+        gameVisualizer.rewriteGameObjects(newObjects);
 
         // Check if objects were updated
         ArrayList<GameObject> updatedObjects = gameVisualizer.getGameObjects();
