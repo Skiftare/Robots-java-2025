@@ -1,12 +1,7 @@
-package gui.ui;
+package game.model;
 
-import game.model.GameObject;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
+import lombok.Getter;
 
-
-import game.model.GameObject;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -14,6 +9,7 @@ public class GameState implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final ArrayList<GameObject> gameObjects;
+    @Getter
     private final String saveName;
 
     public GameState(ArrayList<GameObject> gameObjects, String saveName) {
@@ -25,7 +21,5 @@ public class GameState implements Serializable {
         return new ArrayList<>(gameObjects);
     }
 
-    public String getSaveName() {
-        return saveName;
-    }
+
 }

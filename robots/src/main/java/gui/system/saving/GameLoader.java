@@ -1,6 +1,6 @@
 package gui.system.saving;
 
-import gui.ui.GameState;
+import game.model.GameState;
 import gui.ui.drawing.GameVisualizer;
 import log.Logger;
 
@@ -35,6 +35,7 @@ public class GameLoader {
 
             GameState state = (GameState) ois.readObject();
             gameVisualizer.rewriteGameObjects(state.getGameObjects());
+
             return true;
         } catch (Exception e) {
             Logger.error("Failed to load game: " + e.getMessage());

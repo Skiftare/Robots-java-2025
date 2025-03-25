@@ -54,7 +54,12 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         FrameCloseConfirmationDecorator.addCloseConfirmation(
                 MainApplicationFrame.this,
                 closeStrategy,
-                () -> System.exit(0)
+                () -> {
+                    for (JInternalFrame frame : desktopPane.getAllFrames()) {
+                        frame.dispose();
+                    }
+                    dispose();
+                }
         );
 
         addComponentListener(new ComponentAdapter() {

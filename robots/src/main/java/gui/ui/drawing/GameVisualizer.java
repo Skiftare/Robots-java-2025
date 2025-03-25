@@ -32,16 +32,6 @@ public class GameVisualizer extends JPanel {
         player.addProperty(ObjectProperty.PLAYER);
         movementHandler.addGameObject(player);
 
-
-
-
-        GameObject player2 = new GameObject(2, 2,
-                "robots/src/main/resources/robot.png", "Игрок", "player");
-        player2.addProperty(ObjectProperty.PLAYER);
-        movementHandler.addGameObject(player2);
-
-
-        // Создаем блок (бывший MovableObject)
         GameObject box1 = new GameObject(5, 5, "robots/src/main/resources/object.png", "Ящик", "box");
         box1.addProperty(ObjectProperty.PUSHABLE);
         box1.addProperty(ObjectProperty.STOP);
