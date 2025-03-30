@@ -7,6 +7,8 @@ import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
 import gui.ui.GameWindow;
 import gui.ui.LogWindow;
+import gui.system.profiling.Profile;
+import gui.system.profiling.ProfileManager;
 import log.Logger;
 import lombok.Getter;
 
@@ -54,7 +56,10 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         FrameCloseConfirmationDecorator.addCloseConfirmation(
                 MainApplicationFrame.this,
                 closeStrategy,
-                () -> System.exit(0)
+                () -> {
+                    MainApplicationFrame.this.saveProfileOnExit();
+                    System.exit(0);
+                }
         );
 
         addComponentListener(new ComponentAdapter() {
@@ -135,7 +140,60 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     @Override
     public void localeChanged() {
         updateTitle();
-
         SwingUtilities.updateComponentTreeUI(this);
+    }
+
+    // Собираем состояние внутренних окон, включая их видимость
+    public Profile createProfile(String profileName) {
+        Profile profile = new Profile(profileName, LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage());
+        for (JInternalFrame frame : desktopPane.getAllFrames()) {
+            String key = frame.getClass().getSimpleName();
+            Rectangle bounds = frame.getBounds();
+            boolean isIcon = false;
+            boolean isMaximum = false;
+            try {
+                isIcon = frame.isIcon();
+                isMaximum = frame.isMaximum();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            boolean isVisible = frame.isVisible();
+            Profile.FrameState state = new Profile.FrameState(bounds, isIcon, isMaximum, isVisible);
+            profile.setFrameState(key, state);
+        }
+        return profile;
+    }
+
+    // Восстанавливаем состояние окон из профиля: положение, размеры, состояния, а также видимость
+    public void applyProfile(Profile profile) {
+        for (JInternalFrame frame : desktopPane.getAllFrames()) {
+            String key = frame.getClass().getSimpleName();
+            Profile.FrameState state = profile.getFrameState(key);
+            if (state != null) {
+                frame.setBounds(state.bounds);
+                try {
+                    frame.setIcon(state.isIcon);
+                    frame.setMaximum(state.isMaximum);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                frame.setVisible(state.isVisible);
+            } else {
+                // Если для окна нет записи в профиле – можно скрыть его
+                frame.setVisible(false);
+            }
+        }
+    }
+
+    // При выходе из приложения запрашивается имя профиля и сохраняется его состояние
+    public void saveProfileOnExit() {
+        String defaultProfileName = "profile1";
+        String profileName = JOptionPane.showInputDialog(this,
+                LocalizationManager.getInstance().getString("profile.save.prompt"),
+                defaultProfileName);
+        if (profileName != null && !profileName.trim().isEmpty()) {
+            Profile profile = createProfile(profileName.trim());
+            new ProfileManager().saveProfile(profile);
+        }
     }
 }
