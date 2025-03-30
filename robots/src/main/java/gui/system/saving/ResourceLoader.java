@@ -23,7 +23,6 @@ public class ResourceLoader {
     public Image loadImage(String path) {
         if (path == null) return null;
 
-        // Return from cache if available
         if (imageCache.containsKey(path)) {
             return imageCache.get(path);
         }

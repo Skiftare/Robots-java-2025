@@ -1,16 +1,14 @@
 package gui.system.saving;
 
 import game.model.GameObject;
-import gui.ui.GameState;
+import game.model.GameState;
 import log.Logger;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class GameSaver {

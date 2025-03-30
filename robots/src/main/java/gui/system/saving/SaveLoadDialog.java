@@ -4,7 +4,6 @@ import gui.system.localization.LocalizationManager;
 import gui.ui.drawing.GameVisualizer;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.List;
 
 public class SaveLoadDialog {
