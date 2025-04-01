@@ -2,9 +2,12 @@ package gui.system.profiling;
 
 import javax.swing.*;
 import gui.system.localization.LocalizationManager;
+import lombok.Getter;
+
 import java.awt.*;
 import java.util.List;
 
+@Getter
 public class ProfileChooserDialog extends JDialog {
     private Profile selectedProfile = null;
 
@@ -50,7 +53,4 @@ public class ProfileChooserDialog extends JDialog {
         setLocationRelativeTo(owner);
     }
 
-    public Profile getSelectedProfile() {
-        return selectedProfile;
-    }
 }

@@ -5,10 +5,7 @@ import gui.system.localization.Language;
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
 import gui.system.saving.SaveLoadDialog;
-import log.Logger;
-import gui.system.saving.GameSaver;
-import gui.system.saving.GameLoader;
-import gui.system.saving.MessageDisplayer;
+import log.WindowLogger;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
@@ -139,7 +136,7 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private JMenuItem createLogMessageMenuItem() {
         JMenuItem addLogMessageItem = new JMenuItem(LocalizationManager.getInstance().getString("log.test.message"), KeyEvent.VK_S);
         addLogMessageItem.addActionListener((event) -> {
-            Logger.debug(LocalizationManager.getInstance().getString("log.test.message.text"));
+            WindowLogger.debug(LocalizationManager.getInstance().getString("log.test.message.text"));
         });
         return addLogMessageItem;
     }
@@ -167,7 +164,7 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
             SwingUtilities.updateComponentTreeUI(mainFrame);
         } catch (ClassNotFoundException | InstantiationException
                  | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            Logger.error(LocalizationManager.getInstance().getString("theme.system.exception.while.loading") + e.getMessage());
+            WindowLogger.error(LocalizationManager.getInstance().getString("theme.system.exception.while.loading") + e.getMessage());
         }
     }
 

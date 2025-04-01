@@ -1,7 +1,7 @@
 package gui.system.localization;
 
 
-import log.Logger;
+import log.WindowLogger;
 import lombok.Getter;
 
 import java.util.*;
@@ -36,7 +36,7 @@ public class LocalizationManager {
         try {
             bundle = ResourceBundle.getBundle(BUNDLE_NAME, currentLanguage.getLocale());
         } catch (MissingResourceException e) {
-            Logger.error("Failed to load resource bundle: " + e.getMessage());
+            WindowLogger.error("Failed to load resource bundle: " + e.getMessage());
             bundle = new ListResourceBundle() {
                 @Override
                 protected Object[][] getContents() {
@@ -50,7 +50,7 @@ public class LocalizationManager {
         try {
             return bundle.getString(key);
         } catch (MissingResourceException e) {
-            Logger.error("Missing translation key: " + key);
+            WindowLogger.error("Missing translation key: " + key);
             return "!" + key + "!";
         }
     }

@@ -9,13 +9,14 @@ import gui.ui.GameWindow;
 import gui.ui.LogWindow;
 import gui.system.profiling.Profile;
 import gui.system.profiling.ProfileManager;
-import log.Logger;
+import log.WindowLogger;
 import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.logging.Logger;
 
 import static java.lang.Math.round;
 
@@ -119,12 +120,12 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     }
 
     protected LogWindow createLogWindow() {
-        LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
+        LogWindow logWindow = new LogWindow(WindowLogger.getDefaultLogSource());
         logWindow.setLocation(10, 10);
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
-        Logger.debug(LocalizationManager.getInstance().getString("log.message.system.health"));
+        WindowLogger.debug(LocalizationManager.getInstance().getString("log.message.system.health"));
         return logWindow;
     }
 
@@ -162,10 +163,10 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                 isIcon = frame.isIcon();
                 isMaximum = frame.isMaximum();
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.getAnonymousLogger().info("Could not check if " + key + " is an icon");
             }
             boolean isVisible = frame.isVisible();
-            // Assign z-order value (lower values for frames at the bottom)
+            // Assign z-order value
             Profile.FrameState state = new Profile.FrameState(bounds, isIcon, isMaximum, isVisible, zOrderCounter++);
             profile.setFrameState(key, state);
         }
@@ -202,7 +203,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                     }
                 });
 
-        // Force repaint to ensure correct visual appearance
+        // Force repaint
         desktopPane.revalidate();
         desktopPane.repaint();
     }
@@ -211,7 +212,6 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         ProfileManager profileManager = new ProfileManager();
         String currentProfileName = currentProfile != null ? currentProfile.getProfileName() : null;
 
-        // Create options for the dialog
         String saveCurrentOption = LocalizationManager.getInstance().getString("profile.save.current");
         String createNewOption = LocalizationManager.getInstance().getString("profile.save.new");
         String exitOption = LocalizationManager.getInstance().getString("profile.exit.without.saving");
@@ -250,6 +250,5 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                 profileManager.saveProfile(profile);
             }
         }
-        // If choice is the last option or dialog was closed, exit without saving
     }
 }

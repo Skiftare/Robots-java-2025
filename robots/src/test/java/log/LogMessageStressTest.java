@@ -29,7 +29,7 @@ public class LogMessageStressTest {
 
             List<Long> memoryReadings = new ArrayList<>();
             Runtime runtime = Runtime.getRuntime();
-            LogWindowSource logSource = Logger.getDefaultLogSource();
+            LogWindowSource logSource = WindowLogger.getDefaultLogSource();
 
             List<LogWindow> windows = new ArrayList<>();
             for (int i = 0; i < WINDOW_COUNT; i++) {
@@ -51,7 +51,7 @@ public class LogMessageStressTest {
 
             for (int phase = 0; phase < PHASE_COUNT; phase++) {
                 for (int i = 0; i < MESSAGE_COUNT; i++) {
-                    Logger.debug("Test message " + i + " in phase " + phase);
+                    WindowLogger.debug("Test message " + i + " in phase " + phase);
 
                     if (i % 100 == 99) {
                         Thread.sleep(5);

@@ -2,7 +2,7 @@ package gui.system.saving;
 
 import game.model.GameObject;
 import game.model.GameState;
-import log.Logger;
+import log.WindowLogger;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -29,7 +29,7 @@ public class GameSaver {
                 Files.createDirectories(savePath);
             }
         } catch (IOException e) {
-            Logger.error("Failed to create save directory: " + e.getMessage());
+            WindowLogger.error("Failed to create save directory: " + e.getMessage());
         }
 
         return savePath;
@@ -53,7 +53,7 @@ public class GameSaver {
             return savePath.toString();
         } catch (IOException e) {
             // If failed, try to save in current directory
-            Logger.debug("Failed to save in home directory, trying local directory");
+            WindowLogger.debug("Failed to save in home directory, trying local directory");
             try {
                 savePath = Paths.get(fileName);
                 try (ObjectOutputStream oos = new ObjectOutputStream(
@@ -62,7 +62,7 @@ public class GameSaver {
                     return savePath.toString();
                 }
             } catch (IOException e2) {
-                Logger.error("Failed to save game: " + e2.getMessage());
+                WindowLogger.error("Failed to save game: " + e2.getMessage());
                 return null;
             }
         }

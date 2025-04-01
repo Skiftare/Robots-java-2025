@@ -3,6 +3,7 @@ package gui.system.profiling;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class ProfileManager {
     private static final String PROFILES_DIR = "profiles";
@@ -10,7 +11,10 @@ public class ProfileManager {
     public ProfileManager() {
         File dir = new File(PROFILES_DIR);
         if (!dir.exists()) {
-            dir.mkdirs();
+            if (!dir.mkdirs()) {
+                Logger.getAnonymousLogger().info("Failed to create profiles directory: " + PROFILES_DIR);
+                throw new RuntimeException("Failed to create profiles directory");
+            }
         }
     }
 
@@ -21,7 +25,7 @@ public class ProfileManager {
                 out.writeObject(profile);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.getAnonymousLogger().info("Could not save profile " + profile.getProfileName());
         }
     }
 
@@ -36,7 +40,7 @@ public class ProfileManager {
                         Profile profile = (Profile) in.readObject();
                         profiles.add(profile);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        Logger.getAnonymousLogger().info("Could not load profile " + file.getName());
                     }
                 }
             }

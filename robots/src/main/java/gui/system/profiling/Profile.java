@@ -1,16 +1,21 @@
 package gui.system.profiling;
 
+import lombok.Getter;
+
 import java.awt.Rectangle;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+@Getter
 public class Profile implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    private Map<String, FrameState> frameStates = new HashMap<>();
-    private String language;
-    private String profileName;
+    private final Map<String, FrameState> frameStates = new HashMap<>();
+    private final String language;
+    private final String profileName;
 
     public Profile(String profileName, String language) {
         this.profileName = profileName;
@@ -25,19 +30,8 @@ public class Profile implements Serializable {
         return frameStates.get(frameId);
     }
 
-    public Map<String, FrameState> getFrameStates() {
-        return frameStates;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public String getProfileName() {
-        return profileName;
-    }
-
     public static class FrameState implements Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
         public Rectangle bounds;
         public boolean isIcon;
