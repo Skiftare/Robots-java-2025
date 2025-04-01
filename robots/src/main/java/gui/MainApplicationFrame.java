@@ -25,6 +25,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     private int oldWidth = -1;
     private int oldHeight = -1;
     private final DefaultFrameClosingStrategy closeStrategy;
+    private Profile currentProfile = null;
 
     public MainApplicationFrame() {
         LocalizationManager.getInstance().addListener(this);
@@ -171,7 +172,8 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         return profile;
     }
     public void applyProfile(Profile profile) {
-        // First apply all basic properties
+        this.currentProfile = profile;
+
         for (JInternalFrame frame : desktopPane.getAllFrames()) {
             String key = frame.getClass().getSimpleName();
             Profile.FrameState state = profile.getFrameState(key);
@@ -189,8 +191,6 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             }
         }
 
-        // Process z-order restoration in REVERSE order (highest to lowest)
-        // This ensures windows with higher z-order end up on top
         profile.getFrameStates().entrySet().stream()
                 .sorted((entry1, entry2) -> Integer.compare(entry2.getValue().zOrder, entry1.getValue().zOrder))
                 .forEach(entry -> {
@@ -208,13 +208,48 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     }
     // При выходе из приложения запрашивается имя профиля и сохраняется его состояние
     public void saveProfileOnExit() {
-        String defaultProfileName = "profile1";
-        String profileName = JOptionPane.showInputDialog(this,
-                LocalizationManager.getInstance().getString("profile.save.prompt"),
-                defaultProfileName);
-        if (profileName != null && !profileName.trim().isEmpty()) {
-            Profile profile = createProfile(profileName.trim());
-            new ProfileManager().saveProfile(profile);
+        ProfileManager profileManager = new ProfileManager();
+        String currentProfileName = currentProfile != null ? currentProfile.getProfileName() : null;
+
+        // Create options for the dialog
+        String saveCurrentOption = LocalizationManager.getInstance().getString("profile.save.current");
+        String createNewOption = LocalizationManager.getInstance().getString("profile.save.new");
+        String exitOption = LocalizationManager.getInstance().getString("profile.exit.without.saving");
+
+        Object[] options;
+        if (currentProfileName != null) {
+            options = new Object[] {
+                    String.format(saveCurrentOption, currentProfileName),
+                    createNewOption,
+                    exitOption
+            };
+        } else {
+            options = new Object[] { createNewOption, exitOption };
         }
+
+        int choice = JOptionPane.showOptionDialog(this,
+                LocalizationManager.getInstance().getString("profile.save.prompt"),
+                LocalizationManager.getInstance().getString("profile.save.title"),
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (currentProfileName != null && choice == 0) {
+            // Save to current profile
+            Profile profile = createProfile(currentProfileName);
+            profileManager.saveProfile(profile);
+        } else if ((currentProfileName != null && choice == 1) || (currentProfileName == null && choice == 0)) {
+            // Create new profile
+            String newProfileName = JOptionPane.showInputDialog(this,
+                    LocalizationManager.getInstance().getString("profile.new.name"),
+                    "profile1");
+            if (newProfileName != null && !newProfileName.trim().isEmpty()) {
+                Profile profile = createProfile(newProfileName.trim());
+                profileManager.saveProfile(profile);
+            }
+        }
+        // If choice is the last option or dialog was closed, exit without saving
     }
 }
