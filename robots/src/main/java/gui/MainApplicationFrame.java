@@ -25,6 +25,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     private int oldWidth = -1;
     private int oldHeight = -1;
     private final DefaultFrameClosingStrategy closeStrategy;
+    private Profile currentProfile = null;
 
     public MainApplicationFrame() {
         LocalizationManager.getInstance().addListener(this);
@@ -146,7 +147,13 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     // Собираем состояние внутренних окон, включая их видимость
     public Profile createProfile(String profileName) {
         Profile profile = new Profile(profileName, LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage());
-        for (JInternalFrame frame : desktopPane.getAllFrames()) {
+
+        // Get all frames ordered by z-order (bottom to top)
+        JInternalFrame[] orderedFrames = desktopPane.getAllFrames();
+        // Higher z-order means the window is more in front
+        int zOrderCounter = 0;
+
+        for (JInternalFrame frame : orderedFrames) {
             String key = frame.getClass().getSimpleName();
             Rectangle bounds = frame.getBounds();
             boolean isIcon = false;
@@ -158,14 +165,17 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                 e.printStackTrace();
             }
             boolean isVisible = frame.isVisible();
-            Profile.FrameState state = new Profile.FrameState(bounds, isIcon, isMaximum, isVisible);
+            // Assign z-order value (lower values for frames at the bottom)
+            Profile.FrameState state = new Profile.FrameState(bounds, isIcon, isMaximum, isVisible, zOrderCounter++);
             profile.setFrameState(key, state);
         }
         return profile;
     }
 
-    // Восстанавливаем состояние окон из профиля: положение, размеры, состояния, а также видимость
     public void applyProfile(Profile profile) {
+        this.currentProfile = profile;
+
+        // First, apply all other properties
         for (JInternalFrame frame : desktopPane.getAllFrames()) {
             String key = frame.getClass().getSimpleName();
             Profile.FrameState state = profile.getFrameState(key);
@@ -179,21 +189,69 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                 }
                 frame.setVisible(state.isVisible);
             } else {
-                // Если для окна нет записи в профиле – можно скрыть его
+                // If there's no record for this window in the profile - hide it
                 frame.setVisible(false);
             }
         }
+
+        // Second pass to restore z-order (using a more functional approach)
+        profile.getFrameStates().entrySet().stream()
+                .sorted((entry1, entry2) -> Integer.compare(entry1.getValue().zOrder, entry2.getValue().zOrder))
+                .forEach(entry -> {
+                    for (JInternalFrame frame : desktopPane.getAllFrames()) {
+                        if (frame.getClass().getSimpleName().equals(entry.getKey())) {
+                            // moveToFront will bring the window to the top
+                            desktopPane.moveToFront(frame);
+                            break;
+                        }
+                    }
+                });
     }
 
     // При выходе из приложения запрашивается имя профиля и сохраняется его состояние
     public void saveProfileOnExit() {
-        String defaultProfileName = "profile1";
-        String profileName = JOptionPane.showInputDialog(this,
-                LocalizationManager.getInstance().getString("profile.save.prompt"),
-                defaultProfileName);
-        if (profileName != null && !profileName.trim().isEmpty()) {
-            Profile profile = createProfile(profileName.trim());
-            new ProfileManager().saveProfile(profile);
+        ProfileManager profileManager = new ProfileManager();
+        String currentProfileName = currentProfile != null ? currentProfile.getProfileName() : null;
+
+        // Create options for the dialog
+        String saveCurrentOption = LocalizationManager.getInstance().getString("profile.save.current");
+        String createNewOption = LocalizationManager.getInstance().getString("profile.save.new");
+        String exitOption = LocalizationManager.getInstance().getString("profile.exit.without.saving");
+
+        Object[] options;
+        if (currentProfileName != null) {
+            options = new Object[] {
+                    String.format(saveCurrentOption, currentProfileName),
+                    createNewOption,
+                    exitOption
+            };
+        } else {
+            options = new Object[] { createNewOption, exitOption };
         }
+
+        int choice = JOptionPane.showOptionDialog(this,
+                LocalizationManager.getInstance().getString("profile.save.prompt"),
+                LocalizationManager.getInstance().getString("profile.save.title"),
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (currentProfileName != null && choice == 0) {
+            // Save to current profile
+            Profile profile = createProfile(currentProfileName);
+            profileManager.saveProfile(profile);
+        } else if ((currentProfileName != null && choice == 1) || (currentProfileName == null && choice == 0)) {
+            // Create new profile
+            String newProfileName = JOptionPane.showInputDialog(this,
+                    LocalizationManager.getInstance().getString("profile.new.name"),
+                    "profile1");
+            if (newProfileName != null && !newProfileName.trim().isEmpty()) {
+                Profile profile = createProfile(newProfileName.trim());
+                profileManager.saveProfile(profile);
+            }
+        }
+        // If choice is the last option or dialog was closed, exit without saving
     }
 }
