@@ -45,13 +45,6 @@ public class Profile implements Serializable {
         public boolean isVisible;
         public int zOrder;
 
-        public FrameState(Rectangle bounds, boolean isIcon, boolean isMaximum, boolean isVisible) {
-            this.bounds = bounds;
-            this.isIcon = isIcon;
-            this.isMaximum = isMaximum;
-            this.isVisible = isVisible;
-            this.zOrder = 0;
-        }
 
         public FrameState(Rectangle bounds, boolean isIcon, boolean isMaximum, boolean isVisible, int zOrder) {
             this.bounds = bounds;

@@ -4,8 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.awt.Rectangle;
 import java.util.List;
 import static org.junit.Assert.*;
 
@@ -41,10 +40,10 @@ public class ProfileManagerTest {
 
     @Test
     public void testSaveAndLoadProfile() {
-        // Create test profile
+        // Create test profile with z-order information
         Profile testProfile = new Profile("TestProfile", "en");
         testProfile.setFrameState("mainFrame",
-                new Profile.FrameState(new java.awt.Rectangle(10, 20, 800, 600), false, true, true));
+                new Profile.FrameState(new Rectangle(10, 20, 800, 600), false, true, true, 0));
 
         // Save profile
         profileManager.saveProfile(testProfile);
@@ -70,6 +69,37 @@ public class ProfileManagerTest {
         assertNotNull("Frame state wasn't loaded", loadedState);
         assertEquals(10, loadedState.bounds.x);
         assertEquals(20, loadedState.bounds.y);
+        assertEquals(0, loadedState.zOrder);
+    }
+
+    @Test
+    public void testZOrderPreservation() {
+        // Create test profile with multiple windows at different z-levels
+        Profile testProfile = new Profile("ZOrderTest", "en");
+
+        // Add frames with specific z-order values (bottom to top)
+        testProfile.setFrameState("bottomFrame",
+                new Profile.FrameState(new Rectangle(0, 0, 100, 100), false, false, true, 0));
+        testProfile.setFrameState("middleFrame",
+                new Profile.FrameState(new Rectangle(50, 50, 100, 100), false, false, true, 1));
+        testProfile.setFrameState("topFrame",
+                new Profile.FrameState(new Rectangle(100, 100, 100, 100), false, false, true, 2));
+
+        // Save and reload the profile
+        profileManager.saveProfile(testProfile);
+        List<Profile> loadedProfiles = profileManager.loadProfiles();
+
+        Profile loadedProfile = loadedProfiles.stream()
+                .filter(p -> p.getProfileName().equals("ZOrderTest"))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull("ZOrderTest profile wasn't loaded", loadedProfile);
+
+        // Verify z-order values were preserved
+        assertEquals(0, loadedProfile.getFrameState("bottomFrame").zOrder);
+        assertEquals(1, loadedProfile.getFrameState("middleFrame").zOrder);
+        assertEquals(2, loadedProfile.getFrameState("topFrame").zOrder);
     }
 
     @Test
