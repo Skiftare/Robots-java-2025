@@ -172,6 +172,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         }
         return profile;
     }
+
     public void applyProfile(Profile profile) {
         this.currentProfile = profile;
 
@@ -181,8 +182,10 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             if (state != null) {
                 frame.setBounds(state.bounds);
                 try {
-                    frame.setIcon(state.isIcon);
-                    frame.setMaximum(state.isMaximum);
+                    // Вместо сохранённого состояния всегда сбрасываем в false,
+                    // чтобы окно открывалось в нормальном виде с корректным набором кнопок
+                    frame.setIcon(false);
+                    frame.setMaximum(false);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -207,6 +210,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         desktopPane.revalidate();
         desktopPane.repaint();
     }
+
     // При выходе из приложения запрашивается имя профиля и сохраняется его состояние
     public void saveProfileOnExit() {
         ProfileManager profileManager = new ProfileManager();

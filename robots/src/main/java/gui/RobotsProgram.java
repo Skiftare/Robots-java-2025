@@ -13,6 +13,10 @@ public class RobotsProgram {
         System.setProperty("file.encoding", "UTF-8");
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            // Задаём нужные подписи для кнопок рамки внутренних окон
+            UIManager.put("InternalFrame.iconifyButtonToolTip", "Свернуть");
+            UIManager.put("InternalFrame.maximizeButtonToolTip", "Открыть на полный экран");
+            UIManager.put("InternalFrame.closeButtonToolTip", "Закрыть");
         } catch (Exception e) {
             e.printStackTrace();
         }
