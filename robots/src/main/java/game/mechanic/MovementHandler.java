@@ -3,6 +3,7 @@ package game.mechanic;
 import game.model.GameObject;
 import game.model.ObjectProperty;
 import gui.ui.CoordinateGrid;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,8 +12,11 @@ import java.util.List;
 public class MovementHandler {
     private final CoordinateGrid grid;
     private final List<GameObject> gameObjects = new ArrayList<>();
+    @Getter
     private final FormulaHandler formulaHandler;
+    @Getter
     private boolean gameWon = false;
+    @Getter
     private boolean gameOver = false;
 
     public MovementHandler(CoordinateGrid grid) {
@@ -94,26 +98,30 @@ public class MovementHandler {
             player.setPosition(newPlayerX, newPlayerY);
             anyPlayerMoved = true;
 
-            // Check for special interactions
-            checkInteractions(player);
+            checkGameState();
         }
 
         return anyPlayerMoved;
     }
 
+
     private void checkGameState() {
         List<GameObject> players = getPlayerObjects();
         gameOver = players.isEmpty();
+        if (gameOver) {
+            return;
+        }
 
-        // Check for win condition
         for (GameObject player : players) {
             int[] playerPos = player.getPosition();
-
-            // Get all objects at player position
             List<GameObject> objectsAtPos = getObjectsAt(playerPos[0], playerPos[1]);
 
             for (GameObject obj : objectsAtPos) {
-                if (obj != player && obj.hasProperty(ObjectProperty.WIN)) {
+                if (obj.hasProperty(ObjectProperty.KILL)) {
+                    gameObjects.remove(player);
+                    break;
+                }
+                if (obj.hasProperty(ObjectProperty.WIN)) {
                     gameWon = true;
                     break;
                 }
@@ -123,20 +131,6 @@ public class MovementHandler {
         }
     }
 
-    private void checkInteractions(GameObject player) {
-        int[] playerPos = player.getPosition();
-        List<GameObject> objectsAtPos = getObjectsAt(playerPos[0], playerPos[1]);
-
-        for (GameObject obj : objectsAtPos) {
-            if (obj == player) continue;
-
-            // Kill interaction
-            if (obj.hasProperty(ObjectProperty.KILL)) {
-                gameObjects.remove(player);
-                return;
-            }
-        }
-    }
 
     /**
      * Checks if a move to the target position is possible
@@ -232,17 +226,6 @@ public class MovementHandler {
         gameObjects.clear();
     }
 
-    public boolean isGameWon() {
-        return gameWon;
-    }
-
-    public boolean isGameOver() {
-        return gameOver;
-    }
-
-    public FormulaHandler getFormulaHandler() {
-        return formulaHandler;
-    }
     // Add this method to MovementHandler class
     public void resetGameState() {
         this.gameWon = false;
