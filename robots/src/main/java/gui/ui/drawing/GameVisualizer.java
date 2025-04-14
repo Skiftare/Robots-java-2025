@@ -1,17 +1,17 @@
 package gui.ui.drawing;
 
+import game.factory.GameObjectFactory;
 import game.mechanic.MovementHandler;
 import game.model.GameObject;
 import game.model.ObjectProperty;
+import gui.system.localization.LocalizationManager;
 import gui.ui.CoordinateGrid;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
-import javax.swing.AbstractAction;
-import javax.swing.JPanel;
-import javax.swing.KeyStroke;
 
 public class GameVisualizer extends JPanel {
     private final MovementHandler movementHandler;
@@ -20,34 +20,16 @@ public class GameVisualizer extends JPanel {
     private final CoordinateGrid grid;
 
     public GameVisualizer() {
-        // Инициализация сетки
+        // Initialize the grid
         this.grid = new CoordinateGrid(20, 20);
 
-        // Инициализация обработчика движения
+        // Initialize the movement handler
         this.movementHandler = new MovementHandler(grid);
 
-        // Создаем игрока (бывший Robot)
-        GameObject player = new GameObject(grid.getColumns()/2, grid.getRows()/2,
-                "robots/src/main/resources/robot.png", "Игрок", "player");
-        player.addProperty(ObjectProperty.PLAYER);
-        movementHandler.addGameObject(player);
+        // Initialize game objects and formulas
+        GameObjectFactory.initializeGame(movementHandler);
 
-        GameObject box1 = new GameObject(5, 5, "robots/src/main/resources/object.png", "Ящик", "box");
-        box1.addProperty(ObjectProperty.PUSHABLE);
-        box1.addProperty(ObjectProperty.STOP);
-        movementHandler.addGameObject(box1);
-
-        GameObject box2 = new GameObject(4, 4, "robots/src/main/resources/object.png", "Ящик", "box");
-        box2.addProperty(ObjectProperty.PUSHABLE);
-        box2.addProperty(ObjectProperty.STOP);
-        movementHandler.addGameObject(box2);
-
-
-        GameObject wall = new GameObject(16,16, "robots/src/main/resources/wall.png", "Стена", "wall");
-        wall.addProperty(ObjectProperty.STOP);
-        movementHandler.addGameObject(wall);
-
-        // Настройка клавиатурного ввода
+        // Set up keyboard input
         setFocusable(true);
         requestFocusInWindow();
         setupKeyBindings();
@@ -95,7 +77,100 @@ public class GameVisualizer extends JPanel {
     }
 
     void movePlayerInCells(int dx, int dy) {
-        movementHandler.movePlayers(dx, dy);
+        boolean moved = movementHandler.movePlayers(dx, dy);
+
+        // Check game state after movement
+        if (moved) {
+            checkGameState();
+        }
+
+        repaint();
+    }
+
+    /**
+     * Check win/loss conditions and display appropriate dialog
+     */
+    private void checkGameState() {
+        // Check if player won
+        if (movementHandler.isGameWon()) {
+            showVictoryDialog();
+            return;
+        }
+
+        // Check if game is over (no controllable entities)
+        if (movementHandler.isGameOver()) {
+            showGameOverDialog();
+        }
+    }
+
+    /**
+     * Display victory dialog with only restart option
+     */
+    /**
+     * Display victory dialog with only restart option
+     */
+    private void showVictoryDialog() {
+        SwingUtilities.invokeLater(() -> {
+            LocalizationManager locManager = LocalizationManager.getInstance();
+            JOptionPane pane = new JOptionPane(
+                    locManager.getString("game.victory.message"),
+                    JOptionPane.INFORMATION_MESSAGE,
+                    JOptionPane.DEFAULT_OPTION,
+                    null,
+                    new Object[]{locManager.getString("game.restart")},
+                    locManager.getString("game.restart")
+            );
+
+            JDialog dialog = pane.createDialog(this, locManager.getString("game.victory.title"));
+            dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+            dialog.setModal(true);
+            dialog.setVisible(true);
+
+            // Always restart since there's only one option
+            restartGame();
+        });
+    }
+
+    /**
+     * Display game over dialog with only restart option
+     */
+    private void showGameOverDialog() {
+        SwingUtilities.invokeLater(() -> {
+            LocalizationManager locManager = LocalizationManager.getInstance();
+            //Типичный выбор на КБ
+            JOptionPane pane = new JOptionPane(
+                    locManager.getString("game.over.message"),
+                    JOptionPane.WARNING_MESSAGE,
+                    JOptionPane.DEFAULT_OPTION,
+                    null,
+                    new Object[]{locManager.getString("game.restart")},
+                    locManager.getString("game.restart")
+            );
+
+            JDialog dialog = pane.createDialog(this, locManager.getString("game.over.title"));
+            dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+            dialog.setModal(true);
+            dialog.setVisible(true);
+
+
+            restartGame();
+        });
+    }
+
+    /**
+     * Restart the game
+     */
+    private void restartGame() {
+        // Reset game state flags first
+        movementHandler.resetGameState();
+
+        // Initialize game objects and formulas
+        GameObjectFactory.initializeGame(movementHandler);
+
+        // Request focus for keyboard input
+        requestFocusInWindow();
+
+        // Repaint the panel
         repaint();
     }
 
@@ -127,7 +202,6 @@ public class GameVisualizer extends JPanel {
         g2d.setTransform(originalTransform);
     }
 
-
     public ArrayList<GameObject> getMovableObjects() {
         ArrayList<GameObject> arr = new ArrayList<>();
         for (GameObject obj : movementHandler.getGameObjects()) {
@@ -137,9 +211,11 @@ public class GameVisualizer extends JPanel {
         }
         return new ArrayList<>(arr);
     }
+
     public ArrayList<GameObject> getGameObjects() {
         return new ArrayList<>(movementHandler.getGameObjects());
     }
+
     public void rewriteGameObjects(ArrayList<GameObject> newObjects) {
         // Очищаем список объектов в движке
         movementHandler.clearGameObjects();
