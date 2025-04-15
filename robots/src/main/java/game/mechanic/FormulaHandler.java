@@ -5,8 +5,7 @@ import game.model.ObjectProperty;
 import game.model.formula.Formula;
 import game.model.formula.FormulaElement;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class FormulaHandler {
     private final MovementHandler movementHandler;
@@ -161,7 +160,7 @@ public class FormulaHandler {
     private boolean applyFormulas() {
         boolean propertiesChanged = false;
 
-        // First, explicitly ensure all formula elements NEVER have any properties except PUSHABLE
+        // First, ensure all formula elements only have PUSHABLE property
         for (GameObject obj : movementHandler.getGameObjects()) {
             if (obj instanceof FormulaElement) {
                 boolean hadDifferentProps = obj.hasProperty(ObjectProperty.PLAYER) ||
@@ -178,25 +177,10 @@ public class FormulaHandler {
             }
         }
 
-        // Then reset non-formula objects' properties
-        for (GameObject obj : movementHandler.getGameObjects()) {
-            if (!(obj instanceof FormulaElement)) {
-                // Track properties before reset
-                boolean hadPlayer = obj.hasProperty(ObjectProperty.PLAYER);
-                boolean hadStop = obj.hasProperty(ObjectProperty.STOP);
-                boolean hadKill = obj.hasProperty(ObjectProperty.KILL);
-                boolean hadWin = obj.hasProperty(ObjectProperty.WIN);
+        // Create a map to track which objects should have which formula-defined properties
+        Map<GameObject, Set<ObjectProperty>> newPropertiesMap = new HashMap<>();
 
-                obj.clearProperties();
-
-                // Check if properties were removed
-                if (hadPlayer || hadStop || hadKill || hadWin) {
-                    propertiesChanged = true;
-                }
-            }
-        }
-
-        // Apply formula properties ONLY to non-formula objects
+        // Determine which properties each object should have based on current formulas
         for (Formula formula : activeFormulas) {
             String targetType = formula.getSubjectValue();
             ObjectProperty property = formula.getPropertyValue();
@@ -204,23 +188,56 @@ public class FormulaHandler {
             if (property == null) continue;
 
             for (GameObject obj : movementHandler.getGameObjects()) {
-                // Skip formula elements completely
+                // Skip formula elements
                 if (obj instanceof FormulaElement) {
                     continue;
                 }
 
-                // Apply property only to non-formula objects that match the type
+                // If object matches the formula's subject
                 if (obj.getType().equalsIgnoreCase(targetType) ||
                         obj.getLabel().equalsIgnoreCase(targetType)) {
-                    if (!obj.hasProperty(property)) {
-                        obj.addProperty(property);
-                        propertiesChanged = true;
-                    }
+                    newPropertiesMap.computeIfAbsent(obj, k -> new HashSet<>()).add(property);
+                }
+            }
+        }
+
+        // Apply changes: add/remove properties
+        for (GameObject obj : movementHandler.getGameObjects()) {
+            // Skip formula elements
+            if (obj instanceof FormulaElement) {
+                continue;
+            }
+
+            // Get properties this object should have
+            Set<ObjectProperty> newProperties = newPropertiesMap.getOrDefault(obj, Collections.emptySet());
+
+            // Add missing properties
+            for (ObjectProperty prop : newProperties) {
+                if (!obj.hasProperty(prop)) {
+                    obj.addProperty(prop);
+                    propertiesChanged = true;
+                }
+            }
+
+            // Remove properties that are not in the new set (only formula-defined ones)
+            for (ObjectProperty prop : ObjectProperty.values()) {
+                if (isFormulaDefined(prop) && obj.hasProperty(prop) && !newProperties.contains(prop)) {
+                    obj.removeProperty(prop);
+                    propertiesChanged = true;
                 }
             }
         }
 
         return propertiesChanged;
+    }
+
+    // Helper method to determine if a property is typically set by formulas
+    private boolean isFormulaDefined(ObjectProperty prop) {
+        // These are the properties usually defined by formulas
+        return prop == ObjectProperty.PLAYER ||
+                prop == ObjectProperty.STOP ||
+                prop == ObjectProperty.WIN ||
+                prop == ObjectProperty.KILL;
     }
 
     public List<Formula> getActiveFormulas() {

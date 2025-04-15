@@ -6,6 +6,7 @@ import game.model.GameObject;
 import game.model.ObjectProperty;
 import gui.system.localization.LocalizationManager;
 import gui.ui.CoordinateGrid;
+import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,6 +15,7 @@ import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 
 public class GameVisualizer extends JPanel {
+    @Getter
     private final MovementHandler movementHandler;
     private int panelWidth = 0;
     private int panelHeight = 0;

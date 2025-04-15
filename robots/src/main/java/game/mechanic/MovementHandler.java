@@ -231,4 +231,9 @@ public class MovementHandler {
         this.gameWon = false;
         this.gameOver = false;
     }
+    // Add to MovementHandler class
+    public void recalculateGameState() {
+        resetGameState(); // Reset first
+        checkGameState(); // Then recalculate
+    }
 }
