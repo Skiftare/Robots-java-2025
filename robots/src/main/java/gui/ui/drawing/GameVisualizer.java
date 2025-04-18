@@ -5,6 +5,7 @@ import game.mechanic.MovementHandler;
 import game.model.GameObject;
 import game.model.ObjectProperty;
 import gui.system.localization.LocalizationManager;
+import gui.system.sound.SoundManager;
 import gui.ui.CoordinateGrid;
 import lombok.Getter;
 
@@ -96,12 +97,14 @@ public class GameVisualizer extends JPanel {
         // Check if player won
         if (movementHandler.isGameWon()) {
             showVictoryDialog();
+            SoundManager.playWin();
             return;
         }
 
         // Check if game is over (no controllable entities)
         if (movementHandler.isGameOver()) {
             showGameOverDialog();
+            SoundManager.playDeath();
         }
     }
 

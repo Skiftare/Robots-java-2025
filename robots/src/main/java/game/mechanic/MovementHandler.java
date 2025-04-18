@@ -3,6 +3,7 @@ package game.mechanic;
 import game.model.GameObject;
 import game.model.ObjectProperty;
 import gui.ui.CoordinateGrid;
+import gui.system.sound.SoundManager;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -44,17 +45,24 @@ public class MovementHandler {
 
     public boolean movePlayers(int dx, int dy) {
         boolean moved = movePlayersInternal(dx, dy);
-
-        // Process formulas after movement
         boolean formulaChanged = formulaHandler.processFormulas();
 
-        // Check game state after formula changes (without moving)
+        // 1) play step sound only if we actually changed position
+        if (moved) {
+            SoundManager.playMove();
+        }
+
+        // 2) update game state & play death/win as needed
         if (moved || formulaChanged) {
+            boolean wasGameOver = gameOver;
+            boolean wasGameWon  = gameWon;
             checkGameState();
+
         }
 
         return moved || formulaChanged;
     }
+
 
     private boolean movePlayersInternal(int dx, int dy) {
         List<GameObject> players = getPlayerObjects();
