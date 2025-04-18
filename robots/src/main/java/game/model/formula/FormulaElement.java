@@ -69,28 +69,30 @@ public class FormulaElement extends GameObject {
     }
 
     private int getFittingFontSize(Graphics g, String text, int width, int height) {
-        int fontSize = 20; // Start with this size
-        Font font = g.getFont();
+        Font baseFont = g.getFont();
+        int minSize = 4;   // теперь можно очень мелко
+        int maxSize = 30;
+        int fittedSize = minSize;
 
-        // Binary search for best fitting font size
-        int min = 8;  // Minimum readable size
-        int max = 30; // Maximum size
-
-        while (min <= max) {
-            int mid = (min + max) / 2;
-            Font testFont = new Font(font.getName(), Font.BOLD, mid);
+        while (minSize <= maxSize) {
+            int mid = (minSize + maxSize) / 2;
+            Font testFont = new Font(baseFont.getName(), Font.BOLD, mid);
             FontMetrics fm = g.getFontMetrics(testFont);
 
-            if (fm.stringWidth(text) < width * 0.9 && fm.getHeight() < height * 0.9) {
-                fontSize = mid;
-                min = mid + 1;
+            boolean fitsWidth  = fm.stringWidth(text) <= width;
+            boolean fitsHeight = fm.getHeight() <= height;
+
+            if (fitsWidth && fitsHeight) {
+                fittedSize = mid;     // этот размер влезает, запоминаем его
+                minSize = mid + 1;    // пробуем найти побольше
             } else {
-                max = mid - 1;
+                maxSize = mid - 1;    // слишком большой — уменьшаем
             }
         }
 
-        return fontSize;
+        return fittedSize - 2;
     }
+
 
     public ElementType getElementType() {
         return elementType;

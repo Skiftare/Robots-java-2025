@@ -145,33 +145,46 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         SwingUtilities.updateComponentTreeUI(this);
     }
 
-    // Собираем состояние внутренних окон, включая их видимость
+
     public Profile createProfile(String profileName) {
-        Profile profile = new Profile(profileName, LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage());
+        Profile profile = new Profile(profileName,
+                LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage());
 
-        // Get all frames ordered by z-order (bottom to top)
         JInternalFrame[] orderedFrames = desktopPane.getAllFrames();
-        // Higher z-order means the window is more in front
         int zOrderCounter = 0;
-
         for (JInternalFrame frame : orderedFrames) {
             String key = frame.getClass().getSimpleName();
-            Rectangle bounds = frame.getBounds();
-            boolean isIcon = false;
+
+            Rectangle normalBounds;
+            try {
+                // Если сейчас свернуто или развернуто — getNormalBounds даст последние «windowed» размеры
+                if (frame.isIcon() || frame.isMaximum()) {
+                    normalBounds = frame.getNormalBounds();
+                    if (normalBounds == null) {
+                        normalBounds = frame.getBounds();
+                    }
+                } else {
+                    normalBounds = frame.getBounds();
+                }
+            } catch (Exception e) {
+                normalBounds = frame.getBounds();
+            }
+
+            boolean isIcon    = false;
             boolean isMaximum = false;
             try {
-                isIcon = frame.isIcon();
+                isIcon    = frame.isIcon();
                 isMaximum = frame.isMaximum();
-            } catch (Exception e) {
-                Logger.getAnonymousLogger().info("Could not check if " + key + " is an icon");
-            }
+            } catch (Exception ignored) {}
+
             boolean isVisible = frame.isVisible();
-            // Assign z-order value
-            Profile.FrameState state = new Profile.FrameState(bounds, isIcon, isMaximum, isVisible, zOrderCounter++);
+            Profile.FrameState state = new Profile.FrameState(
+                    normalBounds, isIcon, isMaximum, isVisible, zOrderCounter++);
             profile.setFrameState(key, state);
         }
         return profile;
     }
+
 
     public void applyProfile(Profile profile) {
         this.currentProfile = profile;
@@ -179,37 +192,49 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         for (JInternalFrame frame : desktopPane.getAllFrames()) {
             String key = frame.getClass().getSimpleName();
             Profile.FrameState state = profile.getFrameState(key);
+
             if (state != null) {
-                frame.setBounds(state.bounds);
+                // 1) Сбрасываем любые icon/max, чтобы можно было назначить нормальные размеры
                 try {
-                    // Вместо сохранённого состояния всегда сбрасываем в false,
-                    // чтобы окно открывалось в нормальном виде с корректным набором кнопок
                     frame.setIcon(false);
                     frame.setMaximum(false);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                } catch (Exception ignored) {}
+
+                // 2) Восстанавливаем нормальные bounds и видимость
+                frame.setBounds(state.bounds);
                 frame.setVisible(state.isVisible);
+
+                // 3) Применяем сохранённые флаги
+                try {
+                    if (state.isMaximum) {
+                        frame.setMaximum(true);
+                    } else if (state.isIcon) {
+                        frame.setIcon(true);
+                    }
+                } catch (Exception ignored) {}
+
             } else {
                 frame.setVisible(false);
             }
         }
 
+        // Восстанавливаем порядок слоёв
         profile.getFrameStates().entrySet().stream()
-                .sorted((entry1, entry2) -> Integer.compare(entry2.getValue().zOrder, entry1.getValue().zOrder))
+                .sorted((e1, e2) -> Integer.compare(e2.getValue().zOrder, e1.getValue().zOrder))
                 .forEach(entry -> {
-                    for (JInternalFrame frame : desktopPane.getAllFrames()) {
-                        if (frame.getClass().getSimpleName().equals(entry.getKey()) && frame.isVisible()) {
-                            desktopPane.moveToFront(frame);
+                    String key = entry.getKey();
+                    for (JInternalFrame f : desktopPane.getAllFrames()) {
+                        if (f.getClass().getSimpleName().equals(key) && f.isVisible()) {
+                            desktopPane.moveToFront(f);
                             break;
                         }
                     }
                 });
 
-        // Force repaint
         desktopPane.revalidate();
         desktopPane.repaint();
     }
+
 
     // При выходе из приложения запрашивается имя профиля и сохраняется его состояние
     public void saveProfileOnExit() {
