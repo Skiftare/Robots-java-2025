@@ -1,8 +1,10 @@
 package gui.system.profiling;
 
+import game.model.GameState;
 import lombok.Getter;
 
-import java.awt.Rectangle;
+import javax.swing.*;
+import java.awt.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -13,7 +15,7 @@ public class Profile implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final Map<String, FrameState> frameStates = new HashMap<>();
+    private final Map<String, GameState> frameStates = new HashMap<>();
     private final String language;
     private final String profileName;
 
@@ -22,30 +24,49 @@ public class Profile implements Serializable {
         this.language = language;
     }
 
-    public void setFrameState(String frameId, FrameState state) {
+    public void setFrameState(String frameId, GameState state) {
         frameStates.put(frameId, state);
     }
 
-    public FrameState getFrameState(String frameId) {
+    public GameState getFrameState(String frameId) {
         return frameStates.get(frameId);
     }
 
-    public static class FrameState implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-        public Rectangle bounds;
-        public boolean isIcon;
-        public boolean isMaximum;
-        public boolean isVisible;
-        public int zOrder;
+    // Utility method to apply profile to windows
+    public static void applyProfileToWindows(Profile profile, Map<String, JFrame> frames) {
+        if (profile == null) return;
 
+        for (Map.Entry<String, JFrame> entry : frames.entrySet()) {
+            String frameId = entry.getKey();
+            JFrame frame = entry.getValue();
 
-        public FrameState(Rectangle bounds, boolean isIcon, boolean isMaximum, boolean isVisible, int zOrder) {
-            this.bounds = bounds;
-            this.isIcon = isIcon;
-            this.isMaximum = isMaximum;
-            this.isVisible = isVisible;
-            this.zOrder = zOrder;
+            GameState frameState = profile.getFrameState(frameId);
+            if (frameState != null) {
+                // First reset to normal
+                frame.setExtendedState(Frame.NORMAL);
+
+                // Set size and position
+                frame.setBounds(
+                        frameState.getWindowX(),
+                        frameState.getWindowY(),
+                        frameState.getWindowWidth(),
+                        frameState.getWindowHeight()
+                );
+                frame.setVisible(frameState.isVisible());
+
+                // Apply maximized state first if needed
+                if (frameState.isMaximized()) {
+                    frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+                }
+
+                // Apply iconified state in a separate invokeLater if needed
+                if (frameState.isIconified()) {
+                    SwingUtilities.invokeLater(() -> {
+                        int currentState = frame.getExtendedState();
+                        frame.setExtendedState(currentState | Frame.ICONIFIED);
+                    });
+                }
+            }
         }
     }
 

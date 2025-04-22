@@ -16,7 +16,7 @@ public class SaveLoadDialog {
         );
 
         if (saveName != null && !saveName.trim().isEmpty()) {
-            String savePath = GameSaver.saveGameState(gameVisualizer.getGameObjects(), saveName);
+            String savePath = GameSaver.saveGameState(gameVisualizer.getGameObjects(), parentFrame, saveName);
             if (savePath != null) {
                 MessageDisplayer.showCenteredMessage(parentFrame, "message.saved");
             } else {
@@ -44,7 +44,7 @@ public class SaveLoadDialog {
         );
 
         if (selected != null) {
-            if (GameLoader.loadGameState(gameVisualizer, selected)) {
+            if (GameLoader.loadGameState(gameVisualizer, parentFrame, selected)) {
                 gameVisualizer.repaint();
                 MessageDisplayer.showCenteredMessage(parentFrame, "message.loaded");
             } else {

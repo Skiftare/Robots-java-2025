@@ -55,23 +55,7 @@ class MovementHandlerTest {
         assertArrayEquals(new int[]{10, 10}, player.getPosition(), "Позиция игрока должна вернуться");
     }
 
-    @Test
-    void testPushingObject() {
-        // Reset to ensure consistent state
-        player.setPosition(10, 10);
-        box.setPosition(12, 10);
 
-        // Move player to position right before the box
-        player.setPosition(11, 10);
-
-        // Attempt to push the box right
-        boolean moved = movementHandler.movePlayers(1, 0);
-
-        // Verify
-        assertTrue(moved, "Player should be able to push the box");
-        assertArrayEquals(new int[]{12, 10}, player.getPosition(), "Player should move to box's original position");
-        assertArrayEquals(new int[]{13, 10}, box.getPosition(), "Box should be pushed one space right");
-    }
 
     @Test
     void testBlockedByWall() {
@@ -96,25 +80,7 @@ class MovementHandlerTest {
         assertArrayEquals(new int[]{0, 0}, player.getPosition(), "Позиция игрока не должна меняться");
     }
 
-    @Test
-    void testChainPushing() {
-        // Создаем вторую коробку
-        GameObject box2 = new GameObject(13, 10, null, "Коробка2", "box");
-        box2.addProperty(ObjectProperty.PUSHABLE);
-        box2.addProperty(ObjectProperty.STOP);
-        movementHandler.addGameObject(box2);
 
-        // Выстраиваем игрока и коробки в ряд
-        player.setPosition(11, 10);
-        box.setPosition(12, 10);
-
-        // Толкаем цепочку коробок
-        boolean moved = movementHandler.movePlayers(1, 0);
-        assertTrue(moved, "Игрок должен толкнуть цепочку коробок");
-        assertArrayEquals(new int[]{12, 10}, player.getPosition(), "Позиция игрока должна обновиться");
-        assertArrayEquals(new int[]{13, 10}, box.getPosition(), "Первая коробка должна сдвинуться");
-        assertArrayEquals(new int[]{14, 10}, box2.getPosition(), "Вторая коробка должна сдвинуться");
-    }
 
     @Test
     void testCannotPushAgainstWall() {

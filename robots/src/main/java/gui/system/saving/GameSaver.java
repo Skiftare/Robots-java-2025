@@ -4,6 +4,7 @@ import game.model.GameObject;
 import game.model.GameState;
 import log.WindowLogger;
 
+import javax.swing.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,14 +39,23 @@ public class GameSaver {
     /**
      * Save game state with automatic filename
      */
-    public static String saveGameState(List<GameObject> gameObjects, String fileName) {
+    public static String saveGameState(List<GameObject> gameObjects, JFrame frame, String fileName) {
         if (!fileName.endsWith(".sav")) {
             fileName += ".sav";
         }
 
         // Try to save in user home directory
         Path savePath = getSaveDir().resolve(fileName);
-        GameState state = new GameState(new ArrayList<>(gameObjects), fileName);
+
+        // Capture window state
+        int width = frame.getWidth();
+        int height = frame.getHeight();
+        int x = frame.getX();
+        int y = frame.getY();
+        int extendedState = frame.getExtendedState();
+
+        GameState state = new GameState(new ArrayList<>(gameObjects), fileName,
+                width, height, x, y, extendedState);
 
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new BufferedOutputStream(new FileOutputStream(savePath.toFile())))) {

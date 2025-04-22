@@ -1,14 +1,15 @@
 package gui;
 
+import game.model.GameState;
 import gui.system.ApplicationMenu;
 import gui.system.closing.DefaultFrameClosingStrategy;
 import gui.system.closing.FrameCloseConfirmationDecorator;
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
-import gui.ui.GameWindow;
-import gui.ui.LogWindow;
 import gui.system.profiling.Profile;
 import gui.system.profiling.ProfileManager;
+import gui.ui.GameWindow;
+import gui.ui.LogWindow;
 import log.WindowLogger;
 import lombok.Getter;
 
@@ -16,7 +17,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.logging.Logger;
 
 import static java.lang.Math.round;
 
@@ -145,7 +145,6 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         SwingUtilities.updateComponentTreeUI(this);
     }
 
-
     public Profile createProfile(String profileName) {
         Profile profile = new Profile(profileName,
                 LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage());
@@ -157,7 +156,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
 
             Rectangle normalBounds;
             try {
-                // Если сейчас свернуто или развернуто — getNormalBounds даст последние «windowed» размеры
+                // If currently minimized or maximized, getNormalBounds will give the last "windowed" dimensions
                 if (frame.isIcon() || frame.isMaximum()) {
                     normalBounds = frame.getNormalBounds();
                     if (normalBounds == null) {
@@ -170,16 +169,33 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                 normalBounds = frame.getBounds();
             }
 
-            boolean isIcon    = false;
-            boolean isMaximum = false;
+            // Create extendedState integer from boolean flags
+            int extendedState = 0;
             try {
-                isIcon    = frame.isIcon();
-                isMaximum = frame.isMaximum();
-            } catch (Exception ignored) {}
+                if (frame.isIcon()) {
+                    extendedState |= Frame.ICONIFIED;
+                }
+                if (frame.isMaximum()) {
+                    extendedState |= Frame.MAXIMIZED_BOTH;
+                }
+            } catch (Exception ignored) {
+            }
 
             boolean isVisible = frame.isVisible();
-            Profile.FrameState state = new Profile.FrameState(
-                    normalBounds, isIcon, isMaximum, isVisible, zOrderCounter++);
+
+            // Create a GameState with window properties
+            GameState state = new GameState(
+                    null, // No game objects needed for profile
+                    key,  // Using frame key as save name
+                    normalBounds.width,
+                    normalBounds.height,
+                    normalBounds.x,
+                    normalBounds.y,
+                    extendedState,
+                    zOrderCounter++,
+                    isVisible
+            );
+
             profile.setFrameState(key, state);
         }
         return profile;
@@ -191,36 +207,50 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
 
         for (JInternalFrame frame : desktopPane.getAllFrames()) {
             String key = frame.getClass().getSimpleName();
-            Profile.FrameState state = profile.getFrameState(key);
+            GameState state = profile.getFrameState(key);
 
             if (state != null) {
-                // 1) Сбрасываем любые icon/max, чтобы можно было назначить нормальные размеры
+                // 1) Reset any icon/max states first to set normal dimensions
                 try {
                     frame.setIcon(false);
                     frame.setMaximum(false);
                 } catch (Exception ignored) {}
 
-                // 2) Восстанавливаем нормальные bounds и видимость
-                frame.setBounds(state.bounds);
-                frame.setVisible(state.isVisible);
+                // 2) Restore normal bounds and visibility
+                Rectangle bounds = new Rectangle(
+                        state.getWindowX(),
+                        state.getWindowY(),
+                        state.getWindowWidth(),
+                        state.getWindowHeight()
+                );
+                frame.setBounds(bounds);
+                frame.setVisible(state.isVisible());
 
-                // 3) Применяем сохранённые флаги
+                // 3) Apply saved flags - handle separately, not as mutually exclusive
                 try {
-                    if (state.isMaximum) {
+                    // Apply maximized state first if needed
+                    if (state.isMaximized()) {
                         frame.setMaximum(true);
-                    } else if (state.isIcon) {
-                        frame.setIcon(true);
+                    }
+
+                    // Apply iconified state in a separate invokeLater if needed
+                    if (state.isIconified()) {
+                        SwingUtilities.invokeLater(() -> {
+                            try {
+                                // For JInternalFrame we need to use setIcon instead of extendedState
+                                frame.setIcon(true);
+                            } catch (Exception ignored) {}
+                        });
                     }
                 } catch (Exception ignored) {}
-
             } else {
                 frame.setVisible(false);
             }
         }
 
-        // Восстанавливаем порядок слоёв
+        // Restore layer order
         profile.getFrameStates().entrySet().stream()
-                .sorted((e1, e2) -> Integer.compare(e2.getValue().zOrder, e1.getValue().zOrder))
+                .sorted((e1, e2) -> Integer.compare(e2.getValue().getZOrder(), e1.getValue().getZOrder()))
                 .forEach(entry -> {
                     String key = entry.getKey();
                     for (JInternalFrame f : desktopPane.getAllFrames()) {
@@ -235,7 +265,6 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         desktopPane.repaint();
     }
 
-
     // При выходе из приложения запрашивается имя профиля и сохраняется его состояние
     public void saveProfileOnExit() {
         ProfileManager profileManager = new ProfileManager();
@@ -247,13 +276,13 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
 
         Object[] options;
         if (currentProfileName != null) {
-            options = new Object[] {
+            options = new Object[]{
                     String.format(saveCurrentOption, currentProfileName),
                     createNewOption,
                     exitOption
             };
         } else {
-            options = new Object[] { createNewOption, exitOption };
+            options = new Object[]{createNewOption, exitOption};
         }
 
         int choice = JOptionPane.showOptionDialog(this,

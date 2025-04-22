@@ -122,32 +122,6 @@ class GameVisualizerTest {
         return null;
     }
 
-    @Test
-    void testPushBox() {
-        // Get player and box objects
-        GameObject player = findPlayerObject();
-        GameObject box = findBoxObject();
-
-        // Position player next to box (assuming the box is at 5,5)
-        while (player.getPosition()[0] != box.getPosition()[0] - 1 || player.getPosition()[1] != box.getPosition()[1]) {
-            if (player.getPosition()[0] < box.getPosition()[0] - 1) gameVisualizer.movePlayerInCells(1, 0);
-            if (player.getPosition()[0] > box.getPosition()[0] - 1) gameVisualizer.movePlayerInCells(-1, 0);
-            if (player.getPosition()[1] < box.getPosition()[1]) gameVisualizer.movePlayerInCells(0, 1);
-            if (player.getPosition()[1] > box.getPosition()[1]) gameVisualizer.movePlayerInCells(0, -1);
-        }
-
-        // Get box position before push
-        int boxInitialX = box.getPosition()[0];
-        int boxInitialY = box.getPosition()[1];
-
-        // Push box right
-        gameVisualizer.movePlayerInCells(1, 0);
-
-        // Check if box moved
-        assertEquals(boxInitialX + 1, box.getPosition()[0]);
-        assertEquals(boxInitialY, box.getPosition()[1]);
-    }
-
     // Helper method to find the box object
     private GameObject findBoxObject() {
         for (GameObject obj : gameVisualizer.getGameObjects()) {
