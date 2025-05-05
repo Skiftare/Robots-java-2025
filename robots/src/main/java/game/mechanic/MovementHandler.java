@@ -3,6 +3,8 @@ package game.mechanic;
 import game.model.GameObject;
 import game.model.ObjectProperty;
 import gui.ui.CoordinateGrid;
+import gui.system.sound.SoundManager;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,9 +13,16 @@ import java.util.List;
 public class MovementHandler {
     private final CoordinateGrid grid;
     private final List<GameObject> gameObjects = new ArrayList<>();
+    @Getter
+    private final FormulaHandler formulaHandler;
+    @Getter
+    private boolean gameWon = false;
+    @Getter
+    private boolean gameOver = false;
 
     public MovementHandler(CoordinateGrid grid) {
         this.grid = grid;
+        this.formulaHandler = new FormulaHandler(this);
     }
 
     public void addGameObject(GameObject object) {
@@ -35,11 +44,33 @@ public class MovementHandler {
     }
 
     public boolean movePlayers(int dx, int dy) {
+        boolean moved = movePlayersInternal(dx, dy);
+        boolean formulaChanged = formulaHandler.processFormulas();
+
+        // 1) play step sound only if we actually changed position
+        if (moved) {
+            SoundManager.playMove();
+        }
+
+        // 2) update game state & play death/win as needed
+        if (moved || formulaChanged) {
+            boolean wasGameOver = gameOver;
+            boolean wasGameWon  = gameWon;
+            checkGameState();
+
+        }
+
+        return moved || formulaChanged;
+    }
+
+
+    private boolean movePlayersInternal(int dx, int dy) {
         List<GameObject> players = getPlayerObjects();
         if (players.isEmpty() || (dx == 0 && dy == 0)) {
             return false;
         }
 
+        // Sort players by position based on movement direction for correct pushing behavior
         if (dx > 0) {
             players.sort((p1, p2) -> p2.getPosition()[0] - p1.getPosition()[0]);
         } else if (dx < 0) {
@@ -67,7 +98,7 @@ public class MovementHandler {
             }
 
             // Check path and push objects if needed
-            if (!isPathClearOrPushable(playerX, playerY, dx, dy)) {
+            if (!canMoveToPosition(playerX, playerY, dx, dy)) {
                 continue; // Path blocked for this player
             }
 
@@ -75,80 +106,142 @@ public class MovementHandler {
             player.setPosition(newPlayerX, newPlayerY);
             anyPlayerMoved = true;
 
-            // Check for special interactions
-            checkInteractions(player);
+            checkGameState();
         }
 
         return anyPlayerMoved;
     }
 
-    private void checkInteractions(GameObject player) {
-        int[] playerPos = player.getPosition();
-        for (GameObject obj : gameObjects) {
-            if (obj == player) continue;
 
-            int[] objPos = obj.getPosition();
-            if (objPos[0] == playerPos[0] && objPos[1] == playerPos[1]) {
-                // Здесь будет логика для WIN, KILL и других взаимодействий
-                // на основе свойств объектов
+    private void checkGameState() {
+        List<GameObject> players = getPlayerObjects();
+        gameOver = players.isEmpty();
+        if (gameOver) {
+            return;
+        }
+
+        for (GameObject player : players) {
+            int[] playerPos = player.getPosition();
+            List<GameObject> objectsAtPos = getObjectsAt(playerPos[0], playerPos[1]);
+
+            for (GameObject obj : objectsAtPos) {
+                if (obj.hasProperty(ObjectProperty.KILL)) {
+                    gameObjects.remove(player);
+                    break;
+                }
+                if (obj.hasProperty(ObjectProperty.WIN)) {
+                    gameWon = true;
+                    break;
+                }
             }
+
+            if (gameWon) break;
         }
     }
 
+
     /**
-     * Рекурсивно проверяет, свободен ли путь или можно ли толкать объекты
+     * Checks if a move to the target position is possible
      */
-    private boolean isPathClearOrPushable(int startX, int startY, int dx, int dy) {
+    private boolean canMoveToPosition(int startX, int startY, int dx, int dy) {
         int nextX = startX + dx;
         int nextY = startY + dy;
 
-        // Проверка границ
+        // Check boundaries
         if (nextX < 0 || nextX >= grid.getColumns() ||
                 nextY < 0 || nextY >= grid.getRows()) {
             return false;
         }
 
-        // Проверка на объекты
-        GameObject objectAtNext = getObjectAt(nextX, nextY);
-        if (objectAtNext == null) {
-            return true; // Путь свободен
+        // Check all objects at the target position
+        List<GameObject> objectsAtNext = getObjectsAt(nextX, nextY);
+
+        // If no objects, path is clear
+        if (objectsAtNext.isEmpty()) {
+            return true;
         }
 
-        // Если объект имеет свойство STOP и не PUSHABLE, путь заблокирован
-        if (objectAtNext.hasProperty(ObjectProperty.STOP) &&
-                !objectAtNext.hasProperty(ObjectProperty.PUSHABLE)) {
+        boolean hasStop = false;
+        boolean needsPush = false;
+
+        // Check all objects at the position
+        for (GameObject obj : objectsAtNext) {
+            if (obj.hasProperty(ObjectProperty.STOP)) {
+                hasStop = true;
+            }
+            if (obj.hasProperty(ObjectProperty.PUSHABLE)) {
+                needsPush = true;
+            }
+        }
+
+        // If any object has STOP and is not pushable, we can't move
+        if (hasStop) {
             return false;
         }
 
-        // Если объект PUSHABLE, проверяем рекурсивно дальше
-        if (objectAtNext.hasProperty(ObjectProperty.PUSHABLE)) {
-            if (isPathClearOrPushable(nextX, nextY, dx, dy)) {
-                // Толкаем объект
-                objectAtNext.setPosition(nextX + dx, nextY + dy);
-                return true;
+        // If we have objects to push, check if we can push them
+        if (needsPush) {
+            // Try to push all pushable objects
+            boolean canPushAll = true;
+            for (GameObject obj : objectsAtNext) {
+                if (obj.hasProperty(ObjectProperty.PUSHABLE)) {
+                    // Recursively check if we can push this object
+                    if (!canMoveToPosition(nextX, nextY, dx, dy)) {
+                        canPushAll = false;
+                        break;
+                    }
+
+                    // If we can push, update its position
+                    obj.setPosition(nextX + dx, nextY + dy);
+                }
             }
+            return canPushAll;
         }
 
-        return false; // Не можем толкать объект
+        // If no STOP or PUSHABLE objects, we can move freely (overlap)
+        return true;
     }
 
-    private GameObject getObjectAt(int x, int y) {
+    /**
+     * Returns all objects at the specified position
+     */
+    private List<GameObject> getObjectsAt(int x, int y) {
+        List<GameObject> result = new ArrayList<>();
         for (GameObject obj : gameObjects) {
             int[] pos = obj.getPosition();
             if (pos[0] == x && pos[1] == y) {
-                return obj;
+                result.add(obj);
             }
         }
-        return null;
+        return result;
     }
 
-    //Удаляет объект из игрового мира
+    /**
+     * Returns a single object at the position (for backward compatibility)
+     */
+    private GameObject getObjectAt(int x, int y) {
+        List<GameObject> objects = getObjectsAt(x, y);
+        return objects.isEmpty() ? null : objects.get(0);
+    }
+
+    // Removes an object from the game world
     public void removeGameObject(GameObject object) {
         gameObjects.remove(object);
     }
 
-    //Удаляет все объекты из игрового мира
+    // Removes all objects from the game world
     public void clearGameObjects() {
         gameObjects.clear();
+    }
+
+    // Add this method to MovementHandler class
+    public void resetGameState() {
+        this.gameWon = false;
+        this.gameOver = false;
+    }
+    // Add to MovementHandler class
+    public void recalculateGameState() {
+        resetGameState(); // Reset first
+        checkGameState(); // Then recalculate
     }
 }

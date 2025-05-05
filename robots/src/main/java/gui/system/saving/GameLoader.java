@@ -35,7 +35,12 @@ public class GameLoader {
             GameState state = (GameState) ois.readObject();
             gameVisualizer.rewriteGameObjects(state.getGameObjects());
 
+            // Recalculate formulas and game state
+            gameVisualizer.getMovementHandler().getFormulaHandler().processFormulas();
+            gameVisualizer.getMovementHandler().recalculateGameState();
+
             return true;
+
         } catch (Exception e) {
             WindowLogger.error("Failed to load game: " + e.getMessage());
             return false;
