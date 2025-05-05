@@ -1,7 +1,10 @@
 package log;
 
+import lombok.Getter;
+
 public final class Logger
 {
+    @Getter
     private static final LogWindowSource defaultLogSource;
     static {
         defaultLogSource = new LogWindowSource(100);
@@ -21,8 +24,4 @@ public final class Logger
         defaultLogSource.append(LogLevel.Error, strMessage);
     }
 
-    public static LogWindowSource getDefaultLogSource()
-    {
-        return defaultLogSource;
-    }
 }
