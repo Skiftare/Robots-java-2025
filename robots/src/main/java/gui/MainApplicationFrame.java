@@ -5,65 +5,69 @@ import gui.system.closing.DefaultFrameClosingStrategy;
 import gui.system.closing.FrameCloseConfirmationDecorator;
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
-import gui.ui.GameWindow;
-import gui.ui.LogWindow;
 import gui.system.profiling.Profile;
 import gui.system.profiling.ProfileManager;
+import gui.ui.GameWindow;
+import gui.ui.LogWindow;
 import log.WindowLogger;
 import lombok.Getter;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicInternalFrameUI;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.util.logging.Logger;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.lang.Math.round;
 
 public class MainApplicationFrame extends JFrame implements LocaleChangeListener {
     @Getter
     private final JDesktopPane desktopPane = new JDesktopPane();
-    private int oldWidth = -1;
-    private int oldHeight = -1;
+    private int oldWidth = -1, oldHeight = -1;
     private final DefaultFrameClosingStrategy closeStrategy;
-    private Profile currentProfile = null;
+    private Profile currentProfile;
 
     public MainApplicationFrame() {
         LocalizationManager.getInstance().addListener(this);
 
+        // размеры главного окна
         int inset = 50;
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        Rectangle screenBounds = gd.getDefaultConfiguration().getBounds();
-        Dimension screenSize = new Dimension(screenBounds.width, screenBounds.height);
-        setBounds(inset, inset, screenSize.width, screenSize.height);
-
+        Rectangle screen = GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice()
+                .getDefaultConfiguration()
+                .getBounds();
+        setBounds(inset, inset, screen.width, screen.height);
         setContentPane(desktopPane);
 
+        // рабочие окна
         GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(screenSize.width, screenSize.height);
+        gameWindow.setSize(screen.width, screen.height);
         addWindow(gameWindow);
 
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
-        ApplicationMenu applicationMenu = new ApplicationMenu(this);
-        setJMenuBar(applicationMenu);
-
+        setJMenuBar(new ApplicationMenu(this));
         updateTitle();
 
-        this.closeStrategy = new DefaultFrameClosingStrategy(
+        // на закрытие — спросить, сохранить профиль
+        closeStrategy = new DefaultFrameClosingStrategy(
                 LocalizationManager.getInstance().getString("close.app.confirm"),
                 LocalizationManager.getInstance().getString("close.app.confirm.title")
         );
         FrameCloseConfirmationDecorator.addCloseConfirmation(
-                MainApplicationFrame.this,
-                closeStrategy,
+                this, closeStrategy,
                 () -> {
-                    MainApplicationFrame.this.saveProfileOnExit();
+                    saveProfileOnExit();
                     System.exit(0);
                 }
         );
 
+        // слушаем изменение размеров, чтобы ресайзить внутренние фреймы
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -72,71 +76,21 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         });
     }
 
-    public GameWindow getGameWindow() {
-        for (JInternalFrame frame : desktopPane.getAllFrames()) {
-            if (frame instanceof GameWindow) {
-                return (GameWindow) frame;
-            }
-        }
-        return null;
-    }
-
-    void resizeInternalFrames() {
-        SwingUtilities.invokeLater(() -> {
-            int width = desktopPane.getWidth();
-            int height = desktopPane.getHeight();
-
-            if (width == 0 || height == 0 || oldWidth <= 0 || oldHeight <= 0) {
-                oldWidth = width;
-                oldHeight = height;
-                return;
-            }
-
-            for (JInternalFrame frame : desktopPane.getAllFrames()) {
-                double widthRatio = (double) frame.getWidth() / oldWidth;
-                double heightRatio = (double) frame.getHeight() / oldHeight;
-                double xRatio = (double) frame.getX() / oldWidth;
-                double yRatio = (double) frame.getY() / oldHeight;
-
-                int newWidth = (int) round(width * widthRatio);
-                int newHeight = (int) round(height * heightRatio);
-                int newX = (int) round(width * xRatio);
-                int newY = (int) round(height * yRatio);
-
-                newWidth = Math.min(newWidth, width - newX);
-                newHeight = Math.min(newHeight, height - newY);
-
-                frame.setBounds(newX, newY, newWidth, newHeight);
-                frame.revalidate();
-                frame.repaint();
-            }
-
-            oldWidth = width;
-            oldHeight = height;
-
-            desktopPane.revalidate();
-            desktopPane.repaint();
-        });
-    }
-
-    protected LogWindow createLogWindow() {
-        LogWindow logWindow = new LogWindow(WindowLogger.getDefaultLogSource());
-        logWindow.setLocation(10, 10);
-        logWindow.setSize(300, 800);
-        setMinimumSize(logWindow.getSize());
-        logWindow.pack();
-        WindowLogger.debug(LocalizationManager.getInstance().getString("log.message.system.health"));
-        return logWindow;
-    }
-
     protected void addWindow(JInternalFrame frame) {
         FrameCloseConfirmationDecorator.addCloseConfirmation(frame);
         desktopPane.add(frame);
         frame.setVisible(true);
     }
 
-    void updateTitle() {
-        setTitle(LocalizationManager.getInstance().getString("application.title"));
+    protected LogWindow createLogWindow() {
+        LogWindow w = new LogWindow(WindowLogger.getDefaultLogSource());
+        w.setLocation(10, 10);
+        w.setSize(300, 800);
+        setMinimumSize(w.getSize());
+        w.pack();
+        WindowLogger.debug(LocalizationManager.getInstance()
+                .getString("log.message.system.health"));
+        return w;
     }
 
     @Override
@@ -145,113 +99,187 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         SwingUtilities.updateComponentTreeUI(this);
     }
 
-    // Собираем состояние внутренних окон, включая их видимость
-    public Profile createProfile(String profileName) {
-        Profile profile = new Profile(profileName, LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage());
+    void updateTitle() {
+        setTitle(LocalizationManager.getInstance().getString("application.title"));
+    }
 
-        // Get all frames ordered by z-order (bottom to top)
-        JInternalFrame[] orderedFrames = desktopPane.getAllFrames();
-        // Higher z-order means the window is more in front
-        int zOrderCounter = 0;
+    public GameWindow getGameWindow() {
+        for (JInternalFrame f : desktopPane.getAllFrames())
+            if (f instanceof GameWindow) return (GameWindow) f;
+        return null;
+    }
 
-        for (JInternalFrame frame : orderedFrames) {
-            String key = frame.getClass().getSimpleName();
-            Rectangle bounds = frame.getBounds();
-            boolean isIcon = false;
-            boolean isMaximum = false;
-            try {
-                isIcon = frame.isIcon();
-                isMaximum = frame.isMaximum();
-            } catch (Exception e) {
-                Logger.getAnonymousLogger().info("Could not check if " + key + " is an icon");
+    void resizeInternalFrames() {
+        SwingUtilities.invokeLater(() -> {
+            int w = desktopPane.getWidth(), h = desktopPane.getHeight();
+            if (w <= 0 || h <= 0 || oldWidth <= 0 || oldHeight <= 0) {
+                oldWidth = w;
+                oldHeight = h;
+                return;
             }
-            boolean isVisible = frame.isVisible();
-            // Assign z-order value
-            Profile.FrameState state = new Profile.FrameState(bounds, isIcon, isMaximum, isVisible, zOrderCounter++);
-            profile.setFrameState(key, state);
+            for (JInternalFrame f : desktopPane.getAllFrames()) {
+                double wr = (double) f.getWidth() / oldWidth;
+                double hr = (double) f.getHeight() / oldHeight;
+                double xr = (double) f.getX() / oldWidth;
+                double yr = (double) f.getY() / oldHeight;
+                int nw = (int) round(w * wr), nh = (int) round(h * hr);
+                int nx = (int) round(w * xr), ny = (int) round(h * yr);
+                nw = Math.min(nw, w - nx);
+                nh = Math.min(nh, h - ny);
+                f.setBounds(nx, ny, nw, nh);
+                f.revalidate();
+                f.repaint();
+            }
+            oldWidth = w;
+            oldHeight = h;
+        });
+    }
+
+    /**
+     * Собираем профиль: оба флага хранить независимо.
+     */
+    public Profile createProfile(String profileName) {
+        Profile p = new Profile(
+                profileName,
+                LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage()
+        );
+        int z = 0;
+        for (JInternalFrame f : desktopPane.getAllFrames()) {
+            String key = f.getClass().getSimpleName();
+            Rectangle bounds;
+
+            // Get normal bounds (the bounds to restore to when un-maximizing)
+            if (f.isIcon() || f.isMaximum()) {
+                bounds = f.getNormalBounds();
+                if (bounds == null) {
+                    // Fallback if getNormalBounds() returns null
+                    bounds = new Rectangle(10, 10, 400, 300);
+                }
+            } else {
+                bounds = f.getBounds();
+            }
+
+            p.setFrameState(key, new Profile.FrameState(
+                    bounds, f.isIcon(), f.isMaximum(), f.isVisible(), z++
+            ));
         }
-        return profile;
+        return p;
     }
 
     public void applyProfile(Profile profile) {
         this.currentProfile = profile;
 
-        for (JInternalFrame frame : desktopPane.getAllFrames()) {
-            String key = frame.getClass().getSimpleName();
-            Profile.FrameState state = profile.getFrameState(key);
-            if (state != null) {
-                frame.setBounds(state.bounds);
+        // Process in multiple phases to ensure correct state restoration
+        SwingUtilities.invokeLater(() -> {
+            // Phase 1: Reset all frames to normal state
+            for (JInternalFrame f : desktopPane.getAllFrames()) {
                 try {
-                    // Вместо сохранённого состояния всегда сбрасываем в false,
-                    // чтобы окно открывалось в нормальном виде с корректным набором кнопок
-                    frame.setIcon(false);
-                    frame.setMaximum(false);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                frame.setVisible(state.isVisible);
-            } else {
-                frame.setVisible(false);
+                    if (f.isIcon()) f.setIcon(false);
+                    if (f.isMaximum()) f.setMaximum(false);
+                } catch (Exception ignored) {}
             }
-        }
 
-        profile.getFrameStates().entrySet().stream()
-                .sorted((entry1, entry2) -> Integer.compare(entry2.getValue().zOrder, entry1.getValue().zOrder))
-                .forEach(entry -> {
-                    for (JInternalFrame frame : desktopPane.getAllFrames()) {
-                        if (frame.getClass().getSimpleName().equals(entry.getKey()) && frame.isVisible()) {
-                            desktopPane.moveToFront(frame);
-                            break;
+            // Process intermediate changes
+            desktopPane.validate();
+            desktopPane.repaint();
+
+            // Phase 2: Set bounds and visibility
+            for (JInternalFrame f : desktopPane.getAllFrames()) {
+                String key = f.getClass().getSimpleName();
+                Profile.FrameState state = profile.getFrameState(key);
+
+                if (state == null) {
+                    f.setVisible(false);
+                    continue;
+                }
+
+                // Set normal bounds first
+                if (state.bounds != null) {
+                    f.setBounds(state.bounds);
+                }
+                f.setVisible(state.isVisible);
+            }
+
+            // Process intermediate changes
+            desktopPane.validate();
+            desktopPane.repaint();
+
+            // Add a small delay before applying special states
+            Timer timer = new Timer(100, e -> {
+                // Phase 3: Set z-order
+                profile.getFrameStates().entrySet().stream()
+                        .sorted(Comparator.comparingInt(entry -> entry.getValue().zOrder))
+                        .forEach(entry -> {
+                            for (JInternalFrame f : desktopPane.getAllFrames()) {
+                                if (f.getClass().getSimpleName().equals(entry.getKey()) &&
+                                        f.isVisible()) {
+                                    desktopPane.moveToFront(f);
+                                    break;
+                                }
+                            }
+                        });
+
+                // Phase 4: Apply special states (maximized/iconified)
+                for (JInternalFrame f : desktopPane.getAllFrames()) {
+                    try {
+                        String key = f.getClass().getSimpleName();
+                        Profile.FrameState state = profile.getFrameState(key);
+
+                        if (state != null && state.isVisible) {
+                            // Apply maximized state first
+                            if (state.isMaximum) {
+                                f.setMaximum(true);
+                            }
+
+                            // Then apply iconified state if needed
+                            if (state.isIcon) {
+                                f.setIcon(true);
+                            }
                         }
-                    }
-                });
+                    } catch (Exception ignored) {}
+                }
 
-        // Force repaint
-        desktopPane.revalidate();
-        desktopPane.repaint();
+                desktopPane.validate();
+                desktopPane.repaint();
+            });
+            timer.setRepeats(false);
+            timer.start();
+        });
     }
 
-    // При выходе из приложения запрашивается имя профиля и сохраняется его состояние
     public void saveProfileOnExit() {
-        ProfileManager profileManager = new ProfileManager();
-        String currentProfileName = currentProfile != null ? currentProfile.getProfileName() : null;
+        ProfileManager mgr = new ProfileManager();
+        String cur = currentProfile != null
+                ? currentProfile.getProfileName()
+                : null;
 
-        String saveCurrentOption = LocalizationManager.getInstance().getString("profile.save.current");
-        String createNewOption = LocalizationManager.getInstance().getString("profile.save.new");
-        String exitOption = LocalizationManager.getInstance().getString("profile.exit.without.saving");
+        String opt1 = LocalizationManager.getInstance().getString("profile.save.current");
+        String opt2 = LocalizationManager.getInstance().getString("profile.save.new");
+        String opt3 = LocalizationManager.getInstance().getString("profile.exit.without.saving");
 
-        Object[] options;
-        if (currentProfileName != null) {
-            options = new Object[] {
-                    String.format(saveCurrentOption, currentProfileName),
-                    createNewOption,
-                    exitOption
-            };
-        } else {
-            options = new Object[] { createNewOption, exitOption };
-        }
+        Object[] opts = cur != null
+                ? new Object[]{String.format(opt1, cur), opt2, opt3}
+                : new Object[]{opt2, opt3};
 
-        int choice = JOptionPane.showOptionDialog(this,
+        int choice = JOptionPane.showOptionDialog(
+                this,
                 LocalizationManager.getInstance().getString("profile.save.prompt"),
                 LocalizationManager.getInstance().getString("profile.save.title"),
                 JOptionPane.YES_NO_CANCEL_OPTION,
                 JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[0]);
+                null, opts, opts[0]
+        );
 
-        if (currentProfileName != null && choice == 0) {
-            // Save to current profile
-            Profile profile = createProfile(currentProfileName);
-            profileManager.saveProfile(profile);
-        } else if ((currentProfileName != null && choice == 1) || (currentProfileName == null && choice == 0)) {
-            // Create new profile
-            String newProfileName = JOptionPane.showInputDialog(this,
+        if (cur != null && choice == 0) {
+            mgr.saveProfile(createProfile(cur));
+        } else if ((cur != null && choice == 1) || (cur == null && choice == 0)) {
+            String name = JOptionPane.showInputDialog(
+                    this,
                     LocalizationManager.getInstance().getString("profile.new.name"),
-                    "profile1");
-            if (newProfileName != null && !newProfileName.trim().isEmpty()) {
-                Profile profile = createProfile(newProfileName.trim());
-                profileManager.saveProfile(profile);
+                    "profile1"
+            );
+            if (name != null && !name.trim().isEmpty()) {
+                mgr.saveProfile(createProfile(name.trim()));
             }
         }
     }

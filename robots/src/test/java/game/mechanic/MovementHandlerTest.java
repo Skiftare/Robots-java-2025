@@ -57,13 +57,20 @@ class MovementHandlerTest {
 
     @Test
     void testPushingObject() {
-        // Размещаем игрока рядом с коробкой
+        // Reset to ensure consistent state
+        player.setPosition(10, 10);
+        box.setPosition(12, 10);
+
+        // Move player to position right before the box
         player.setPosition(11, 10);
-        // Толкаем коробку вправо
+
+        // Attempt to push the box right
         boolean moved = movementHandler.movePlayers(1, 0);
-        assertTrue(moved, "Игрок должен толкнуть коробку");
-        assertArrayEquals(new int[]{12, 10}, player.getPosition(), "Позиция игрока должна обновиться");
-        assertArrayEquals(new int[]{13, 10}, box.getPosition(), "Коробка должна сдвинуться");
+
+        // Verify
+        assertTrue(moved, "Player should be able to push the box");
+        assertArrayEquals(new int[]{12, 10}, player.getPosition(), "Player should move to box's original position");
+        assertArrayEquals(new int[]{13, 10}, box.getPosition(), "Box should be pushed one space right");
     }
 
     @Test
