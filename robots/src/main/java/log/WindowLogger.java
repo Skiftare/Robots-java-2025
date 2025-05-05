@@ -2,7 +2,7 @@ package log;
 
 import lombok.Getter;
 
-public final class Logger
+public final class WindowLogger
 {
     @Getter
     private static final LogWindowSource defaultLogSource;
@@ -10,7 +10,7 @@ public final class Logger
         defaultLogSource = new LogWindowSource(100);
     }
     
-    private Logger()
+    private WindowLogger()
     {
     }
 

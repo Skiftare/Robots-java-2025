@@ -7,13 +7,16 @@ import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
 import gui.ui.GameWindow;
 import gui.ui.LogWindow;
-import log.Logger;
+import gui.system.profiling.Profile;
+import gui.system.profiling.ProfileManager;
+import log.WindowLogger;
 import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.logging.Logger;
 
 import static java.lang.Math.round;
 
@@ -23,6 +26,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     private int oldWidth = -1;
     private int oldHeight = -1;
     private final DefaultFrameClosingStrategy closeStrategy;
+    private Profile currentProfile = null;
 
     public MainApplicationFrame() {
         LocalizationManager.getInstance().addListener(this);
@@ -54,7 +58,10 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         FrameCloseConfirmationDecorator.addCloseConfirmation(
                 MainApplicationFrame.this,
                 closeStrategy,
-                () -> System.exit(0)
+                () -> {
+                    MainApplicationFrame.this.saveProfileOnExit();
+                    System.exit(0);
+                }
         );
 
         addComponentListener(new ComponentAdapter() {
@@ -65,6 +72,14 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         });
     }
 
+    public GameWindow getGameWindow() {
+        for (JInternalFrame frame : desktopPane.getAllFrames()) {
+            if (frame instanceof GameWindow) {
+                return (GameWindow) frame;
+            }
+        }
+        return null;
+    }
 
     void resizeInternalFrames() {
         SwingUtilities.invokeLater(() -> {
@@ -104,14 +119,13 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         });
     }
 
-
     protected LogWindow createLogWindow() {
-        LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
+        LogWindow logWindow = new LogWindow(WindowLogger.getDefaultLogSource());
         logWindow.setLocation(10, 10);
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
-        Logger.debug(LocalizationManager.getInstance().getString("log.message.system.health"));
+        WindowLogger.debug(LocalizationManager.getInstance().getString("log.message.system.health"));
         return logWindow;
     }
 
@@ -128,7 +142,113 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     @Override
     public void localeChanged() {
         updateTitle();
-
         SwingUtilities.updateComponentTreeUI(this);
+    }
+
+    // Собираем состояние внутренних окон, включая их видимость
+    public Profile createProfile(String profileName) {
+        Profile profile = new Profile(profileName, LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage());
+
+        // Get all frames ordered by z-order (bottom to top)
+        JInternalFrame[] orderedFrames = desktopPane.getAllFrames();
+        // Higher z-order means the window is more in front
+        int zOrderCounter = 0;
+
+        for (JInternalFrame frame : orderedFrames) {
+            String key = frame.getClass().getSimpleName();
+            Rectangle bounds = frame.getBounds();
+            boolean isIcon = false;
+            boolean isMaximum = false;
+            try {
+                isIcon = frame.isIcon();
+                isMaximum = frame.isMaximum();
+            } catch (Exception e) {
+                Logger.getAnonymousLogger().info("Could not check if " + key + " is an icon");
+            }
+            boolean isVisible = frame.isVisible();
+            // Assign z-order value
+            Profile.FrameState state = new Profile.FrameState(bounds, isIcon, isMaximum, isVisible, zOrderCounter++);
+            profile.setFrameState(key, state);
+        }
+        return profile;
+    }
+    public void applyProfile(Profile profile) {
+        this.currentProfile = profile;
+
+        for (JInternalFrame frame : desktopPane.getAllFrames()) {
+            String key = frame.getClass().getSimpleName();
+            Profile.FrameState state = profile.getFrameState(key);
+            if (state != null) {
+                frame.setBounds(state.bounds);
+                try {
+                    frame.setIcon(state.isIcon);
+                    frame.setMaximum(state.isMaximum);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                frame.setVisible(state.isVisible);
+            } else {
+                frame.setVisible(false);
+            }
+        }
+
+        profile.getFrameStates().entrySet().stream()
+                .sorted((entry1, entry2) -> Integer.compare(entry2.getValue().zOrder, entry1.getValue().zOrder))
+                .forEach(entry -> {
+                    for (JInternalFrame frame : desktopPane.getAllFrames()) {
+                        if (frame.getClass().getSimpleName().equals(entry.getKey()) && frame.isVisible()) {
+                            desktopPane.moveToFront(frame);
+                            break;
+                        }
+                    }
+                });
+
+        // Force repaint
+        desktopPane.revalidate();
+        desktopPane.repaint();
+    }
+    // При выходе из приложения запрашивается имя профиля и сохраняется его состояние
+    public void saveProfileOnExit() {
+        ProfileManager profileManager = new ProfileManager();
+        String currentProfileName = currentProfile != null ? currentProfile.getProfileName() : null;
+
+        String saveCurrentOption = LocalizationManager.getInstance().getString("profile.save.current");
+        String createNewOption = LocalizationManager.getInstance().getString("profile.save.new");
+        String exitOption = LocalizationManager.getInstance().getString("profile.exit.without.saving");
+
+        Object[] options;
+        if (currentProfileName != null) {
+            options = new Object[] {
+                    String.format(saveCurrentOption, currentProfileName),
+                    createNewOption,
+                    exitOption
+            };
+        } else {
+            options = new Object[] { createNewOption, exitOption };
+        }
+
+        int choice = JOptionPane.showOptionDialog(this,
+                LocalizationManager.getInstance().getString("profile.save.prompt"),
+                LocalizationManager.getInstance().getString("profile.save.title"),
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (currentProfileName != null && choice == 0) {
+            // Save to current profile
+            Profile profile = createProfile(currentProfileName);
+            profileManager.saveProfile(profile);
+        } else if ((currentProfileName != null && choice == 1) || (currentProfileName == null && choice == 0)) {
+            // Create new profile
+            String newProfileName = JOptionPane.showInputDialog(this,
+                    LocalizationManager.getInstance().getString("profile.new.name"),
+                    "profile1");
+            if (newProfileName != null && !newProfileName.trim().isEmpty()) {
+                Profile profile = createProfile(newProfileName.trim());
+                profileManager.saveProfile(profile);
+            }
+        }
     }
 }
