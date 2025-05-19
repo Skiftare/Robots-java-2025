@@ -48,7 +48,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         setBounds(inset, inset, screen.width, screen.height);
         setContentPane(desktopPane);
 
-        showLevelSelectionMenu(profile);
+        showLevelSelectionMenu(currentProfile);
 
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
@@ -294,12 +294,11 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         if (completedLevel > currentProfile.getHighestLevelCompleted()) {
             currentProfile.setHighestLevelCompleted(completedLevel);
             ProfileManager.saveProfile(currentProfile);
-
-            // Обновить меню уровней, если оно открыто
             if (levelSelectionFrame != null && !levelSelectionFrame.isClosed()) {
-                levelSelectionFrame.dispose(); // Закрываем старое окно
-                showLevelSelectionMenu(currentProfile); // Открываем заново с обновленным профилем
+                levelSelectionFrame.dispose();
+                showLevelSelectionMenu(currentProfile);
             }
+        } else {
         }
     }
 

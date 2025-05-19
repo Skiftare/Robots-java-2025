@@ -13,11 +13,6 @@ public class LevelSelectionInternalFrame extends JInternalFrame implements Local
     private final MainApplicationFrame mainFrame;
     private final int totalLevels = 3;
 
-    public void updateProfile(Profile newProfile) {
-        this.profile = newProfile;
-        initButtons();
-    }
-
     public LevelSelectionInternalFrame(MainApplicationFrame mainFrame, Profile profile) {
         super(LocalizationManager.getInstance().getString("level.selection.title"), true, true, true, true);
         this.profile = profile;
@@ -39,6 +34,11 @@ public class LevelSelectionInternalFrame extends JInternalFrame implements Local
                 LocalizationManager.getInstance().removeListener(LevelSelectionInternalFrame.this);
             }
         });
+    }
+
+    public void updateProfile(Profile newProfile) {
+        this.profile = newProfile;
+        initButtons();
     }
 
     private void initButtons() {

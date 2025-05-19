@@ -3,6 +3,8 @@ package gui.system.profiling;
 import lombok.Getter;
 
 import java.awt.Rectangle;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -64,5 +66,9 @@ public class Profile implements Serializable {
     @Override
     public String toString() {
         return profileName;
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
     }
 }

@@ -87,7 +87,7 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
 
             if (choice == 0) {
                 int nextLevel = currentLevel + 1;
-                mainFrame.updateProgress(currentLevel);
+                mainFrame.updateProgress(nextLevel); // <--- Обновляем прогресс на следующий уровень
                 if (nextLevel <= 3) {
                     loadLevel(nextLevel);
                     updateTitle();
@@ -100,8 +100,10 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
                     openMenu();
                 }
             } else if (choice == 1) {
+                mainFrame.updateProgress(currentLevel);
                 loadLevel(currentLevel);
             } else {
+                mainFrame.updateProgress(currentLevel);
                 openMenu();
             }
         });

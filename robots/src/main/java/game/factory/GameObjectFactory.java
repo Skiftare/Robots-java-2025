@@ -332,8 +332,8 @@ public class GameObjectFactory {
         movementHandler.clearGameObjects();
 
         // TODO: реализуйте второй уровень (другой набор объектов)
-        createCustomLevel(movementHandler);
-        createCustomFormulas(movementHandler);
+        createBasicLevel(movementHandler);
+        createBasicFormulas(movementHandler);
 
         movementHandler.getFormulaHandler().processFormulas();
     }
