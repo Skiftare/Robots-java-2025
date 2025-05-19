@@ -25,7 +25,9 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
         setLocation(30, 30);
 
         visualizer = new GameVisualizer();
+        visualizer.setGameWindow(this);
         getContentPane().add(visualizer, BorderLayout.CENTER);
+
 
         loadLevel(level);
 

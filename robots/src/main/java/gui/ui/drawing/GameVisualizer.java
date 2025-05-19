@@ -7,6 +7,7 @@ import game.model.ObjectProperty;
 import gui.system.localization.LocalizationManager;
 import gui.system.sound.SoundManager;
 import gui.ui.CoordinateGrid;
+import gui.ui.GameWindow;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -21,6 +22,12 @@ public class GameVisualizer extends JPanel {
     private int panelWidth = 0;
     private int panelHeight = 0;
     private final CoordinateGrid grid;
+
+    private GameWindow gameWindow;
+
+    public void setGameWindow(GameWindow gameWindow) {
+        this.gameWindow = gameWindow;
+    }
 
     public GameVisualizer() {
         // Initialize the grid
@@ -94,16 +101,18 @@ public class GameVisualizer extends JPanel {
      * Check win/loss conditions and display appropriate dialog
      */
     private void checkGameState() {
-        // Check if player won
         if (movementHandler.isGameWon()) {
-            showVictoryDialog();
+            if (gameWindow != null) {
+                gameWindow.onLevelWon();
+            }
             SoundManager.playWin();
             return;
         }
 
-        // Check if game is over (no controllable entities)
         if (movementHandler.isGameOver()) {
-            showGameOverDialog();
+            if (gameWindow != null) {
+                gameWindow.onLevelLost();
+            }
             SoundManager.playDeath();
         }
     }

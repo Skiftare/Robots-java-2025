@@ -36,6 +36,8 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     public MainApplicationFrame(Profile profile) {
         LocalizationManager.getInstance().addListener(this);
 
+        this.currentProfile = profile;
+
         // размеры главного окна
         int inset = 50;
         Rectangle screen = GraphicsEnvironment
@@ -284,16 +286,20 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         }
     }
 
-    private Profile profile;
-
     public Profile getProfile() {
-        return profile;
+        return currentProfile;
     }
 
     public void updateProgress(int completedLevel) {
-        if (completedLevel > profile.getHighestLevelCompleted()) {
-            profile.setHighestLevelCompleted(completedLevel);
-            ProfileManager.saveProfile(profile);
+        if (completedLevel > currentProfile.getHighestLevelCompleted()) {
+            currentProfile.setHighestLevelCompleted(completedLevel);
+            ProfileManager.saveProfile(currentProfile);
+
+            // Обновить меню уровней, если оно открыто
+            if (levelSelectionFrame != null && !levelSelectionFrame.isClosed()) {
+                levelSelectionFrame.dispose(); // Закрываем старое окно
+                showLevelSelectionMenu(currentProfile); // Открываем заново с обновленным профилем
+            }
         }
     }
 

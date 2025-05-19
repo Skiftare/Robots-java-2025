@@ -9,9 +9,14 @@ import javax.swing.*;
 import java.awt.*;
 
 public class LevelSelectionInternalFrame extends JInternalFrame implements LocaleChangeListener {
-    private final Profile profile;
+    private Profile profile;
     private final MainApplicationFrame mainFrame;
     private final int totalLevels = 3;
+
+    public void updateProfile(Profile newProfile) {
+        this.profile = newProfile;
+        initButtons();
+    }
 
     public LevelSelectionInternalFrame(MainApplicationFrame mainFrame, Profile profile) {
         super(LocalizationManager.getInstance().getString("level.selection.title"), true, true, true, true);

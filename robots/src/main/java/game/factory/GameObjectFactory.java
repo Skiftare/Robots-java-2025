@@ -332,8 +332,8 @@ public class GameObjectFactory {
         movementHandler.clearGameObjects();
 
         // TODO: реализуйте второй уровень (другой набор объектов)
-        // Например:
-        // создайте игрока, стены, флаги, ловушки и т.д. по логике второго уровня
+        createCustomLevel(movementHandler);
+        createCustomFormulas(movementHandler);
 
         movementHandler.getFormulaHandler().processFormulas();
     }
@@ -342,6 +342,8 @@ public class GameObjectFactory {
         movementHandler.clearGameObjects();
 
         // TODO: реализуйте третий уровень
+        createCustomLevel(movementHandler);
+        createCustomFormulas(movementHandler);
 
         movementHandler.getFormulaHandler().processFormulas();
     }
