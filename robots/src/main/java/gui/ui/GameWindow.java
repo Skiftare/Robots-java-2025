@@ -87,22 +87,20 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
                 int nextLevel = currentLevel + 1;
                 mainFrame.updateProgress(currentLevel);
                 if (nextLevel <= 3) {
-                    mainFrame.openLevel(nextLevel);
-                    this.dispose();
+                    loadLevel(nextLevel);
+                    updateTitle();
                 } else {
                     JOptionPane.showMessageDialog(
                             this,
                             LocalizationManager.getInstance().getString("game.all.levels.completed"),
                             LocalizationManager.getInstance().getString("game.level.won.title"),
                             JOptionPane.INFORMATION_MESSAGE);
-                    mainFrame.showLevelSelectionMenu(mainFrame.getProfile());
-                    this.dispose();
+                    openMenu();
                 }
             } else if (choice == 1) {
                 loadLevel(currentLevel);
             } else {
-                mainFrame.showLevelSelectionMenu(mainFrame.getProfile());
-                this.dispose();
+                openMenu();
             }
         });
     }
@@ -126,10 +124,16 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
             if (choice == 0) {
                 loadLevel(currentLevel);
             } else {
-                mainFrame.showLevelSelectionMenu(mainFrame.getProfile());
-                this.dispose();
+                openMenu();
             }
         });
+    }
+
+    private void openMenu() {
+        try {
+            this.setClosed(true);  // Закрываем текущее окно игры
+        } catch (Exception ignored) {}
+        mainFrame.showLevelSelectionMenu(mainFrame.getProfile());
     }
 
     @Override
