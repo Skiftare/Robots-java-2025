@@ -1,85 +1,76 @@
 package gui.ui;
 
-import gui.system.localization.LocalizationManager;
-import gui.ui.drawing.GameVisualizer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import gui.MainApplicationFrame;
+import gui.system.profiling.Profile;
+import org.junit.jupiter.api.Test;
 
-import javax.swing.*;
-import java.awt.*;
-import java.lang.reflect.Field;
-import java.util.List;
+import java.lang.reflect.Method;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GameWindowTest {
 
-    private GameWindow gameWindow;
-    private LocalizationManager localizationManager;
+    // Dummy frame to satisfy constructor and override UI interactions
+    private static class DummyMainFrame extends MainApplicationFrame {
+        public DummyMainFrame() {
+            super(null);
+        }
 
-    @Before
-    public void setUp() {
-        gameWindow = new GameWindow();
-        localizationManager = LocalizationManager.getInstance();
-    }
+        @Override
+        public void updateProgress(int nextLevel) {
+            // no-op for testing
+        }
 
-    @After
-    public void tearDown() {
-        if (gameWindow != null) {
-            gameWindow.dispose();
+        @Override
+        public void showLevelSelectionMenu(Profile profile) {
+            // no-op for testing
+        }
+
+        @Override
+        public Profile getProfile() {
+            return null;
         }
     }
 
     @Test
-    public void testTitleInitialization() {
-        String expectedTitle = localizationManager.getString("game.window.title");
-        assertEquals("Заголовок окна должен инициализироваться строкой из LocalizationManager",
-                expectedTitle, gameWindow.getTitle());
+    public void testConstructorSetsProperties() {
+        DummyMainFrame frame = new DummyMainFrame();
+        GameWindow window = new GameWindow(1, frame);
+
+        // Verify basic JInternalFrame settings
+        assertTrue(window.isClosable(), "Window should be closable");
+        assertTrue(window.isIconifiable(), "Window should be iconifiable");
+        assertTrue(window.isResizable(), "Window should be resizable");
+        assertTrue(window.isMaximizable(), "Window should be maximizable");
+
+        // Verify size and position
+        assertEquals(800, window.getWidth(), "Width should be 800");
+        assertEquals(600, window.getHeight(), "Height should be 600");
+        assertEquals(30, window.getX(), "X location should be 30");
+        assertEquals(30, window.getY(), "Y location should be 30");
+
+        // Verify visualizer initialization
+        assertNotNull(window.getGameVisualizer(), "Visualizer should be initialized");
     }
 
     @Test
-    public void testLocaleChangedUpdatesTitle() {
-        // Устанавливаем произвольное значение, чтобы проверить обновление
-        gameWindow.setTitle("dummy");
-        gameWindow.localeChanged();
-        String expectedTitle = localizationManager.getString("game.window.title");
-        assertEquals("После вызова localeChanged заголовок должен обновиться",
-                expectedTitle, gameWindow.getTitle());
-    }
+    public void testLoadLevelValidAndInvalid() throws Exception {
+        DummyMainFrame frame = new DummyMainFrame();
+        GameWindow window = new GameWindow(1, frame);
 
-    @Test
-    public void testContainsGameVisualizer() {
-        Container contentPane = gameWindow.getContentPane();
-        boolean foundGameVisualizer = false;
-        for (Component comp : contentPane.getComponents()) {
-            if (comp instanceof JPanel) {
-                JPanel panel = (JPanel) comp;
-                for (Component child : panel.getComponents()) {
-                    if (child instanceof GameVisualizer) {
-                        foundGameVisualizer = true;
-                        break;
-                    }
-                }
-            }
+        // Access private loadLevel method via reflection
+        Method loadLevel = GameWindow.class.getDeclaredMethod("loadLevel", int.class);
+        loadLevel.setAccessible(true);
+
+        // Valid levels should not throw
+        for (int lvl = 1; lvl <= 3; lvl++) {
+            final int level = lvl;
+            assertDoesNotThrow(() -> loadLevel.invoke(window, level), "loadLevel(" + level + ") should not throw");
         }
-        assertTrue("GameWindow должен содержать компонент GameVisualizer", foundGameVisualizer);
-    }
 
-    @Test
-    public void testDisposeRemovesListener() throws Exception {
-        // Используем рефлексию для доступа к приватному полю "listeners" LocalizationManager
-        Field listenersField = LocalizationManager.class.getDeclaredField("listeners");
-        listenersField.setAccessible(true);
-        List<?> listeners = (List<?>) listenersField.get(localizationManager);
-
-        // Перед вызовом dispose() окно должно быть зарегистрировано как слушатель
-        assertTrue("GameWindow должен быть зарегистрирован как слушатель", listeners.contains(gameWindow));
-
-        gameWindow.dispose();
-
-        // После вызова dispose() GameWindow должен быть удалён из списка слушателей
-        assertFalse("После dispose() GameWindow не должен присутствовать в списке слушателей",
-                listeners.contains(gameWindow));
+        // Invalid level should throw IllegalArgumentException
+        Exception ex = assertThrows(Exception.class, () -> loadLevel.invoke(window, 99));
+        Throwable cause = ex.getCause();
+        assertTrue(cause instanceof IllegalArgumentException, "Expected IllegalArgumentException for invalid level");
     }
 }

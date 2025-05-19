@@ -20,15 +20,25 @@ public class LevelSelectionInternalFrame extends JInternalFrame implements Local
 
         LocalizationManager.getInstance().addListener(this);
 
-        setSize(300, 200);
-        setLocation(50, 50);
+        // Размер побольше
+        int width = 600;
+        int height = 400;
+        setSize(width, height);
 
-        // Установка Layout один раз
+        // Убираем жёсткое setLocation(...)
+        // Центрирование после того, как desktopPane получит размеры
+        SwingUtilities.invokeLater(() -> {
+            Dimension desktopSize = mainFrame.getDesktopPane().getSize();
+            int x = (desktopSize.width - getWidth()) + 800;
+            int y = (desktopSize.height - getHeight()) / 2;
+            setLocation(x, y);
+        });
+
+        // Layout и кнопки
         getContentPane().setLayout(new GridLayout(0, 1, 5, 5));
-
         initButtons();
 
-        this.addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
+        addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
             @Override
             public void internalFrameClosed(javax.swing.event.InternalFrameEvent e) {
                 LocalizationManager.getInstance().removeListener(LevelSelectionInternalFrame.this);
