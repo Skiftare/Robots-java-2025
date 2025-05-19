@@ -8,6 +8,7 @@ import gui.system.localization.LocalizationManager;
 import gui.system.profiling.Profile;
 import gui.system.profiling.ProfileManager;
 import gui.ui.GameWindow;
+import gui.ui.LevelSelectionInternalFrame;
 import gui.ui.LogWindow;
 import log.WindowLogger;
 import lombok.Getter;
@@ -29,8 +30,10 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
     private int oldWidth = -1, oldHeight = -1;
     private final DefaultFrameClosingStrategy closeStrategy;
     private Profile currentProfile;
+    private LevelSelectionInternalFrame levelSelectionFrame;
+    private GameWindow gameWindow;
 
-    public MainApplicationFrame() {
+    public MainApplicationFrame(Profile profile) {
         LocalizationManager.getInstance().addListener(this);
 
         // размеры главного окна
@@ -43,10 +46,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         setBounds(inset, inset, screen.width, screen.height);
         setContentPane(desktopPane);
 
-        // рабочие окна
-        GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(screen.width, screen.height);
-        addWindow(gameWindow);
+        showLevelSelectionMenu(profile);
 
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
@@ -281,6 +281,45 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             if (name != null && !name.trim().isEmpty()) {
                 mgr.saveProfile(createProfile(name.trim()));
             }
+        }
+    }
+
+    private Profile profile;
+
+    public Profile getProfile() {
+        return profile;
+    }
+
+    public void updateProgress(int completedLevel) {
+        if (completedLevel > profile.getHighestLevelCompleted()) {
+            profile.setHighestLevelCompleted(completedLevel);
+            ProfileManager.saveProfile(profile);
+        }
+    }
+
+    public void showLevelSelectionMenu(Profile profile) {
+        if (levelSelectionFrame != null && !levelSelectionFrame.isClosed()) {
+            levelSelectionFrame.toFront();
+            return;
+        }
+
+        levelSelectionFrame = new LevelSelectionInternalFrame(this, profile);
+        desktopPane.add(levelSelectionFrame);
+        levelSelectionFrame.setVisible(true);
+    }
+
+    public void openLevel(int level) {
+        if (gameWindow != null && !gameWindow.isClosed()) {
+            gameWindow.dispose();
+        }
+
+        gameWindow = new GameWindow(level, this);
+        desktopPane.add(gameWindow);
+        gameWindow.setVisible(true);
+        try {
+            gameWindow.setSelected(true);
+        } catch (java.beans.PropertyVetoException e) {
+            e.printStackTrace();
         }
     }
 }

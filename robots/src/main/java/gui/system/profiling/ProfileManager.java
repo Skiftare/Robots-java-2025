@@ -18,7 +18,7 @@ public class ProfileManager {
         }
     }
 
-    public void saveProfile(Profile profile) {
+    public static void saveProfile(Profile profile) {
         try {
             File file = new File(PROFILES_DIR, profile.getProfileName() + ".profile");
             try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {

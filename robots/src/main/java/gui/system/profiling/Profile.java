@@ -22,6 +22,18 @@ public class Profile implements Serializable {
         this.language = language;
     }
 
+    private int highestLevelCompleted = 0;  // последний пройденный уровень
+
+    public int getHighestLevelCompleted() {
+        return highestLevelCompleted;
+    }
+
+    public void setHighestLevelCompleted(int highestLevelCompleted) {
+        if (highestLevelCompleted > this.highestLevelCompleted) {
+            this.highestLevelCompleted = highestLevelCompleted;
+        }
+    }
+
     public void setFrameState(String frameId, FrameState state) {
         frameStates.put(frameId, state);
     }

@@ -13,7 +13,6 @@ public class RobotsProgram {
         System.setProperty("file.encoding", "UTF-8");
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            // Задаём нужные подписи для кнопок рамки внутренних окон
             UIManager.put("InternalFrame.iconifyButtonToolTip", "Свернуть");
             UIManager.put("InternalFrame.maximizeButtonToolTip", "Открыть на полный экран");
             UIManager.put("InternalFrame.closeButtonToolTip", "Закрыть");
@@ -22,7 +21,6 @@ public class RobotsProgram {
         }
 
         SwingUtilities.invokeLater(() -> {
-            // Загружаем сохранённые профили
             ProfileManager profileManager = new ProfileManager();
             java.util.List<Profile> profiles = profileManager.loadProfiles();
             Profile selectedProfile = null;
@@ -45,23 +43,21 @@ public class RobotsProgram {
                 }
             }
 
-            // Если выбран профиль – устанавливаем язык из профиля до создания интерфейса
-            if (selectedProfile != null) {
-                String lang = selectedProfile.getLanguage();
-                if ("ru".equals(lang)) {
-                    LocalizationManager.getInstance().setLanguage(Language.RUSSIAN);
-                } else if ("en".equals(lang)) {
-                    LocalizationManager.getInstance().setLanguage(Language.ENGLISH);
-                }
+            if (selectedProfile == null) {
+                selectedProfile = new Profile("default", "en");
             }
 
-            MainApplicationFrame frame = new MainApplicationFrame();
-            if (selectedProfile != null) {
-                frame.applyProfile(selectedProfile);
+            if ("ru".equals(selectedProfile.getLanguage())) {
+                LocalizationManager.getInstance().setLanguage(Language.RUSSIAN);
+            } else if ("en".equals(selectedProfile.getLanguage())) {
+                LocalizationManager.getInstance().setLanguage(Language.ENGLISH);
             }
+
+            MainApplicationFrame frame = new MainApplicationFrame(selectedProfile);
             frame.pack();
             frame.setVisible(true);
             frame.setExtendedState(Frame.MAXIMIZED_BOTH);
         });
     }
 }
+

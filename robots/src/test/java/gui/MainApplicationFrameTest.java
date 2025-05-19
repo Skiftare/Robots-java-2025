@@ -1,122 +1,199 @@
 package gui;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import gui.system.profiling.Profile;
+import gui.system.profiling.Profile.FrameState;
 import gui.system.localization.LocalizationManager;
+import gui.ui.GameWindow;
 import gui.ui.LogWindow;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class MainApplicationFrameTest {
+import static org.junit.jupiter.api.Assertions.*;
 
-    private MainApplicationFrame mainFrame;
+class MainApplicationFrameTest {
+
+    private MainApplicationFrame frame;
 
     @BeforeEach
-    public void setUp() throws InterruptedException, InvocationTargetException {
-        // Создаем MainApplicationFrame на EDT
-        SwingUtilities.invokeAndWait(() -> mainFrame = new MainApplicationFrame());
-    }
-
-    @Test
-    public void testFrameInitialization() {
-        // Проверяем, что объект mainFrame создан и десктоп-панель не равна null
-        assertNotNull(mainFrame, "MainApplicationFrame должен быть создан");
-        assertNotNull(mainFrame.getDesktopPane(), "DesktopPane не должен быть null");
-        // Проверяем, что десктоп-панель установлена как content pane
-        assertEquals(mainFrame.getContentPane(), mainFrame.getDesktopPane(), "DesktopPane должен быть установлен как content pane");
-
-        // Проверяем, что размеры окна заданы (хотя в тестовой среде они могут быть не полностью реальными)
-        Rectangle bounds = mainFrame.getBounds();
-        assertTrue(bounds.width > 0, "Ширина MainApplicationFrame должна быть больше 0");
-        assertTrue(bounds.height > 0, "Высота MainApplicationFrame должна быть больше 0");
-
-        // Проверяем, что операция закрытия установлена как DO_NOTHING_ON_CLOSE
-        assertEquals(JFrame.DO_NOTHING_ON_CLOSE, mainFrame.getDefaultCloseOperation(),
-                "Операция закрытия должна быть DO_NOTHING_ON_CLOSE");
-    }
-
-    @Test
-    public void testTitleUpdate() throws InterruptedException, InvocationTargetException {
-        // Обновляем заголовок и проверяем, что он соответствует локализованной строке
-        SwingUtilities.invokeAndWait(() -> mainFrame.updateTitle());
-        String expectedTitle = LocalizationManager.getInstance().getString("application.title");
-        assertEquals(expectedTitle, mainFrame.getTitle(), "Заголовок MainApplicationFrame должен соответствовать локализованной строке");
-    }
-
-    @Test
-    public void testAddWindow() throws InterruptedException, InvocationTargetException {
-        // Создаем новое внутреннее окно
-        JInternalFrame testInternalFrame = new JInternalFrame("Test Window", true, true, true, true);
-        // Добавляем его с использованием метода addWindow()
-        SwingUtilities.invokeAndWait(() -> mainFrame.addWindow(testInternalFrame));
-
-        // Проверяем, что окно добавлено на десктоп-панель и сделано видимым
-        boolean found = false;
-        for (JInternalFrame frame : mainFrame.getDesktopPane().getAllFrames()) {
-            if (frame == testInternalFrame) {
-                found = true;
-                break;
-            }
-        }
-        assertTrue(found, "Внутреннее окно должно быть добавлено в десктоп-панель");
-        assertTrue(testInternalFrame.isVisible(), "Внутреннее окно должно быть видимым");
-    }
-
-    @Test
-    public void testCreateLogWindow() throws InterruptedException, InvocationTargetException {
-        // Создаем лог-окно
-        final LogWindow[] holder = new LogWindow[1];
-        SwingUtilities.invokeAndWait(() -> holder[0] = mainFrame.createLogWindow());
-        LogWindow logWindow = holder[0];
-        assertNotNull(logWindow, "LogWindow не должен быть null");
-
-        // Проверяем, что координаты установлены как (10, 10)
-        assertEquals(10, logWindow.getX(), "X координата LogWindow должна быть 10");
-        assertEquals(10, logWindow.getY(), "Y координата LogWindow должна быть 10");
-        // Проверяем, что размеры лог-окна заданы (после pack() они могут определяться содержимым)
-        assertTrue(logWindow.getWidth() > 0, "Ширина LogWindow должна быть больше 0");
-        assertTrue(logWindow.getHeight() > 0, "Высота LogWindow должна быть больше 0");
-    }
-
-    @Test
-    public void testResizeInternalFrames() throws InterruptedException, InvocationTargetException {
-        // Создаем внутреннее окно с начальными размерами и добавляем его
-        JInternalFrame internalFrame = new JInternalFrame("Resizable Window", true, true, true, true);
+    void setUp() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            internalFrame.setBounds(0, 0, 200, 200);
-            mainFrame.addWindow(internalFrame);
-            // Устанавливаем начальный размер десктоп-панели
-            mainFrame.getDesktopPane().setSize(800, 600);
+            frame = new MainApplicationFrame();
+            // Без показа фрейма нормальные bounds не сохраняются при maximize
+            frame.setVisible(true);
         });
-        // Первый вызов resizeInternalFrames() для инициализации oldWidth/oldHeight
-        SwingUtilities.invokeAndWait(() -> mainFrame.resizeInternalFrames());
-        // Симулируем изменение размера десктоп-панели
-        SwingUtilities.invokeAndWait(() -> mainFrame.getDesktopPane().setSize(1200, 900));
-        // Второй вызов для реального пересчета размеров
-        SwingUtilities.invokeAndWait(() -> mainFrame.resizeInternalFrames());
-        // Даем время на выполнение invokeLater
-        Thread.sleep(100);
+    }
 
-        Rectangle newBounds = internalFrame.getBounds();
-        // Проверяем, что хотя бы один из размеров изменился (увеличился относительно исходных 200)
-        assertTrue(newBounds.width > 200 || newBounds.height > 200,
-                "Размеры внутреннего окна должны измениться после изменения размера десктоп-панели");
+    @AfterEach
+    void tearDown() throws Exception {
+        SwingUtilities.invokeAndWait(frame::dispose);
     }
 
     @Test
-    public void testLocaleChanged() throws InterruptedException, InvocationTargetException {
-        // Изначально обновляем заголовок
-        SwingUtilities.invokeAndWait(() -> mainFrame.updateTitle());
-        // Вызываем localeChanged(), которое должно обновить заголовок
-        SwingUtilities.invokeAndWait(() -> mainFrame.localeChanged());
-        String updatedTitle = mainFrame.getTitle();
+    void testGetGameWindow() throws Exception {
+        AtomicReference<GameWindow> ref = new AtomicReference<>();
+        SwingUtilities.invokeAndWait(() -> ref.set(frame.getGameWindow()));
 
-        // Проверяем, что заголовок соответствует локализованной строке
-        String expectedTitle = LocalizationManager.getInstance().getString("application.title");
-        assertEquals(expectedTitle, updatedTitle, "После изменения локали заголовок должен обновиться");
+        GameWindow gw = ref.get();
+        assertNotNull(gw, "getGameWindow() не должен вернуть null");
+        assertTrue(gw instanceof GameWindow, "getGameWindow() должен вернуть именно GameWindow");
+    }
+
+    @Test
+    void testUpdateTitleAndLocaleChanged() throws Exception {
+        AtomicReference<String> titleBefore = new AtomicReference<>();
+        AtomicReference<String> titleAfter  = new AtomicReference<>();
+
+        SwingUtilities.invokeAndWait(() -> {
+            // подменим заголовок, чтобы убедиться, что updateTitle действительно меняет его
+            frame.setTitle("dummy");
+            titleBefore.set(frame.getTitle());
+
+            // вызываем localeChanged (внутри — updateTitle + UI-update)
+            frame.localeChanged();
+            titleAfter.set(frame.getTitle());
+        });
+
+        String expected = LocalizationManager.getInstance()
+                .getString("application.title");
+        assertEquals("dummy",  titleBefore.get(), "До обновления заголовок должен быть dummy");
+        assertEquals(expected, titleAfter.get(),  "После localeChanged() заголовок берётся из LocalizationManager");
+    }
+
+    @Test
+    void testCreateProfile() throws Exception {
+        AtomicReference<Profile> ref = new AtomicReference<>();
+        SwingUtilities.invokeAndWait(() -> ref.set(frame.createProfile("testProfile")));
+        Profile profile = ref.get();
+
+        assertEquals("testProfile", profile.getProfileName(), "Имя профиля должно совпадать");
+        // Должны быть сведения о GameWindow и LogWindow
+        assertNotNull(profile.getFrameState("GameWindow"), "Нужен FrameState для GameWindow");
+        assertNotNull(profile.getFrameState("LogWindow"),  "Нужен FrameState для LogWindow");
+
+        FrameState gwState = profile.getFrameState("GameWindow");
+        assertNotNull(gwState.bounds,      "bounds не должен быть null");
+        assertTrue(gwState.isVisible,      "GameWindow по умолчанию видима");
+        assertFalse(gwState.isIcon,        "GameWindow по умолчанию не иконизирована");
+        assertFalse(gwState.isMaximum,     "GameWindow по умолчанию не максимизирована");
+    }
+
+    @Test
+    void testApplyProfileWithDifferentStates() throws Exception {
+        AtomicReference<GameWindow> gwRef  = new AtomicReference<>();
+        AtomicReference<LogWindow>  lwRef  = new AtomicReference<>();
+
+        SwingUtilities.invokeAndWait(() -> {
+            gwRef.set(frame.getGameWindow());
+            // найдём LogWindow
+            for (JInternalFrame f : frame.getDesktopPane().getAllFrames()) {
+                if (f instanceof LogWindow) {
+                    lwRef.set((LogWindow) f);
+                }
+            }
+        });
+
+        GameWindow gw = gwRef.get();
+        LogWindow  lw = lwRef.get();
+        assertNotNull(lw, "LogWindow должен присутствовать");
+
+        // Запомним исходные bounds
+        Rectangle gwBounds = gw.getBounds();
+        Rectangle lwBounds = lw.getBounds();
+
+        // Собираем кастомный профиль
+        Profile profile = new Profile("p1",
+                LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage());
+        // 1) GameWindow — невидимое, без icon/max, zOrder=1
+        profile.setFrameState("GameWindow",
+                new FrameState(gwBounds, false, false, false, 1));
+        // 2) LogWindow — видимое, иконизированное и максимизированное, zOrder=0
+        profile.setFrameState("LogWindow",
+                new FrameState(lwBounds, true, true, true, 0));
+
+        // Применяем профиль
+        SwingUtilities.invokeAndWait(() -> frame.applyProfile(profile));
+        // ждём таймер из applyProfile (100 мс)
+        Thread.sleep(200);
+
+        AtomicReference<Boolean> gwVisible = new AtomicReference<>();
+        AtomicReference<Boolean> lwIcon    = new AtomicReference<>();
+        AtomicReference<Rectangle> gwBoundsAfter = new AtomicReference<Rectangle>();
+
+        SwingUtilities.invokeAndWait(() -> {
+            gwVisible.set(gw.isVisible());
+            lwIcon.set(lw.isIcon());
+            gwBoundsAfter.set(gw.getBounds());
+        });
+
+        assertFalse(gwVisible.get(), "GameWindow должна стать невидимой по профилю");
+        assertEquals(gwBounds, gwBoundsAfter.get(),
+                "bounds GameWindow должны восстановиться из FrameState");
+        assertTrue(lwIcon.get(), "LogWindow должна быть иконизирована по профилю");
+    }
+
+    @Test
+    void testRestoreNormalBoundsAfterMaximizeAndIcon() throws Exception {
+        AtomicReference<GameWindow> gwRef = new AtomicReference<>();
+        SwingUtilities.invokeAndWait(() -> gwRef.set(frame.getGameWindow()));
+        GameWindow gw = gwRef.get();
+        assertNotNull(gw, "GameWindow должен быть доступен");
+
+        // 1) Задаём произвольные bounds в оконном режиме
+        Rectangle original = new Rectangle(80,  60, 320, 240);
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                gw.setMaximum(false);
+                gw.setIcon(false);
+            } catch (Exception ignored) {}
+            gw.setBounds(original);
+        });
+
+        // 2) Максимизируем и иконизируем
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                gw.setMaximum(true);
+                gw.setIcon(true);
+            } catch (Exception e) {
+                fail("Не удалось максимизировать/иконизировать окно: " + e.getMessage());
+            }
+        });
+
+        // 3) Сохраняем профиль
+        AtomicReference<Profile> profile = new AtomicReference<>(new Profile("p-test",
+                LocalizationManager.getInstance().getCurrentLanguage().getLocale().getLanguage()));
+        // При сохранении учитывается getNormalBounds()
+        SwingUtilities.invokeAndWait(() -> {
+            Profile created = frame.createProfile("p-test");
+            profile.set(created);
+        });
+
+        // Убедимся, что в профиле хранится нормальные bounds
+        FrameState st = profile.get().getFrameState("GameWindow");
+        assertNotNull(st, "В профиле должен быть FrameState для GameWindow");
+        assertEquals(original, st.bounds, "В профиле должны лежать оригинальные bounds");
+
+        // 4) Применяем профиль
+        SwingUtilities.invokeAndWait(() -> frame.applyProfile(profile.get()));
+        // ждём таймер из applyProfile
+        Thread.sleep(200);
+
+        // 5) Снимаем maximize и icon — возвращаемся в оконный режим
+        AtomicReference<Rectangle> restoredRef = new AtomicReference<>();
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                gw.setIcon(false);
+                gw.setMaximum(false);
+            } catch (Exception ignored) {}
+            restoredRef.set(gw.getBounds());
+        });
+
+        // 6) Проверяем
+        Rectangle restored = restoredRef.get();
+        assertEquals(original, restored,
+                String.format("Окно должно вернуться к исходным bounds %s, но получили %s",
+                        original, restored));
     }
 }

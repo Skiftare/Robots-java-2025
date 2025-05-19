@@ -318,4 +318,32 @@ public class GameObjectFactory {
         movementHandler.addGameObject(FormulaElementFactory.createNoun(4, 17, "player"));
     }
 
+    public static void createLevel1(MovementHandler movementHandler) {
+        movementHandler.clearGameObjects();
+
+        // Пример: текущий кастомный уровень
+        createCustomLevel(movementHandler);
+        createCustomFormulas(movementHandler);
+
+        movementHandler.getFormulaHandler().processFormulas();
+    }
+
+    public static void createLevel2(MovementHandler movementHandler) {
+        movementHandler.clearGameObjects();
+
+        // TODO: реализуйте второй уровень (другой набор объектов)
+        // Например:
+        // создайте игрока, стены, флаги, ловушки и т.д. по логике второго уровня
+
+        movementHandler.getFormulaHandler().processFormulas();
+    }
+
+    public static void createLevel3(MovementHandler movementHandler) {
+        movementHandler.clearGameObjects();
+
+        // TODO: реализуйте третий уровень
+
+        movementHandler.getFormulaHandler().processFormulas();
+    }
+
 }
