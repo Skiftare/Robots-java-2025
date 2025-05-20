@@ -135,9 +135,17 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
 
     private void openMenu() {
         try {
-            this.setClosed(true);  // Закрываем текущее окно игры
+            this.addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
+                @Override
+                public void internalFrameClosed(javax.swing.event.InternalFrameEvent e) {
+                    // Открываем меню только после полного закрытия окна
+                    mainFrame.showLevelSelectionMenu(mainFrame.getProfile());
+                    // Снимаем слушатель, чтобы не сработал повторно
+                    GameWindow.this.removeInternalFrameListener(this);
+                }
+            });
+            this.setClosed(true);
         } catch (Exception ignored) {}
-        mainFrame.showLevelSelectionMenu(mainFrame.getProfile());
     }
 
     @Override
