@@ -23,7 +23,15 @@ import java.util.Random;
 public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, IRenderAdapter, IGameMechanic {
     private static final Random random = new Random();
     private final Color starColor = new Color(255, 255, 180);
-    private final List<Point> stars = new ArrayList<>();
+
+    // Use parallel arrays instead of a Star class
+    private final List<Integer> starX = new ArrayList<>();
+    private final List<Integer> starY = new ArrayList<>();
+    private final List<Float> starBrightness = new ArrayList<>();
+    private final List<Integer> starSize = new ArrayList<>();
+
+    private int prevWidth = 800;
+    private int prevHeight = 600;
     private long lastStarUpdate = 0;
     private float playerRotation = 0;
     private boolean rainbowMode = false;
@@ -45,7 +53,7 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
 
     @Override
     public String getVersion() {
-        return "2.0";
+        return "2.1";
     }
 
     @Override
@@ -54,7 +62,7 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
         registry.registerControlAdapter(this);
         registry.registerRenderAdapter(this);
         registry.registerGameMechanic(this);
-        generateStars(100);
+        generateStars(300);
         WindowLogger.debug("Ultimate Mod Example initialized with all extensions!");
     }
 
@@ -64,31 +72,60 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
     }
 
     private void generateStars(int count) {
-        stars.clear();
+        // Clear all lists
+        starX.clear();
+        starY.clear();
+        starBrightness.clear();
+        starSize.clear();
+
+        // Generate new stars
         for (int i = 0; i < count; i++) {
-            stars.add(new Point(random.nextInt(800), random.nextInt(600)));
+            starX.add(random.nextInt(prevWidth));
+            starY.add(random.nextInt(prevHeight));
+            starBrightness.add(random.nextFloat() * 0.5f + 0.5f); // 0.5-1.0 range
+            starSize.add(1 + random.nextInt(3));
         }
     }
 
-    // IBackgroundProvider implementation
+    // IBackgroundProvider implementation with improved star rendering
     @Override
     public void drawBackground(Graphics2D g, int width, int height, long timestamp) {
-        // Occasionally update star positions for twinkling effect
-        if (timestamp - lastStarUpdate > 500) {
-            for (Point star : stars) {
-                if (random.nextInt(10) < 3) {
-                    star.x = random.nextInt(width);
-                    star.y = random.nextInt(height);
+        // Check if window size changed - if so, redistribute stars
+        if (width != prevWidth || height != prevHeight) {
+            prevWidth = width;
+            prevHeight = height;
+            generateStars(150);
+        }
+
+        // Twinkle stars less frequently (every 2 seconds)
+        if (timestamp - lastStarUpdate > 2000) {
+            for (int i = 0; i < starX.size(); i++) {
+                // Sometimes change brightness (5% chance)
+                if (random.nextInt(100) < 5) {
+                    starBrightness.set(i, random.nextFloat() * 0.5f + 0.5f);
+                }
+
+                // Small chance to relocate a star (2% chance)
+                if (random.nextInt(100) < 2) {
+                    starX.set(i, random.nextInt(width));
+                    starY.set(i, random.nextInt(height));
                 }
             }
             lastStarUpdate = timestamp;
         }
 
-        // Draw stars with yellow color
-        g.setColor(starColor);
-        for (Point star : stars) {
-            int size = 1 + random.nextInt(3);
-            g.fillOval(star.x, star.y, size, size);
+        // Draw stars with proper brightness
+        for (int i = 0; i < starX.size(); i++) {
+            // Apply brightness to star color
+            float brightness = starBrightness.get(i);
+            Color starColorWithBrightness = new Color(
+                    Math.min(255, (int)(starColor.getRed() * brightness)),
+                    Math.min(255, (int)(starColor.getGreen() * brightness)),
+                    Math.min(255, (int)(starColor.getBlue() * brightness))
+            );
+
+            g.setColor(starColorWithBrightness);
+            g.fillOval(starX.get(i), starY.get(i), starSize.get(i), starSize.get(i));
         }
     }
 
@@ -151,34 +188,51 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
         return false;
     }
 
-    // IRenderAdapter implementation for custom rendering
+    // IRenderAdapter implementation with fixed rainbow effect
     @Override
     public boolean customizeDraw(GameObject object, Graphics2D g, int cellSize, Point start) {
         // Add rainbow effect to player objects when enabled
         if (rainbowMode && object.hasProperty(ObjectProperty.PLAYER)) {
-            playerRotation += 0.1f;
+            // Update rotation
+            playerRotation += 0.8f;
             if (playerRotation > 360) playerRotation = 0;
 
-            int hue = (int)(playerRotation % 360);
-            Color rainbowColor = Color.getHSBColor(hue/360.0f, 0.8f, 1.0f);
-
-            // Save original transform and color
             AffineTransform originalTransform = g.getTransform();
-            Color originalColor = g.getColor();
+            Paint originalPaint = g.getPaint();
 
-            // Set rainbow color and apply rotation
-            g.setColor(rainbowColor);
-            g.translate(start.x + cellSize / 2, start.y + cellSize / 2);
-            g.rotate(Math.toRadians(playerRotation));
-            g.translate(-cellSize / 2, -cellSize / 2);
+            int objX = object.getPosition()[0];
+            int objY = object.getPosition()[1];
+            int pixelX = start.x + (objX * cellSize);
+            int pixelY = start.y + (objY * cellSize);
+            int centerX = pixelX + cellSize / 2;
+            int centerY = pixelY + cellSize / 2;
 
-            // Draw a fancy player shape
-            int margin = cellSize / 5;
-            g.fillRoundRect(margin, margin, cellSize - 2*margin, cellSize - 2*margin, cellSize/3, cellSize/3);
+            float hue = (playerRotation % 360) / 360.0f;
+            Color mainColor = Color.getHSBColor(hue, 0.9f, 1.0f);
 
-            // Restore original settings
+            RadialGradientPaint gradient = new RadialGradientPaint(
+                    centerX, centerY, cellSize * 0.7f,
+                    new float[]{0.0f, 0.6f, 1.0f},
+                    new Color[]{
+                            Color.WHITE,
+                            mainColor,
+                            Color.getHSBColor((hue + 0.2f) % 1.0f, 1.0f, 0.8f)
+                    }
+            );
+            g.setPaint(gradient);
+
+            g.fillRoundRect(pixelX, pixelY, cellSize, cellSize, cellSize/3, cellSize/3);
+
+            g.setColor(Color.BLACK);
+            int eyeSize = cellSize / 6;
+            g.fillOval(pixelX + cellSize/4 - eyeSize/2, pixelY + cellSize/3 - eyeSize/2, eyeSize, eyeSize);
+            g.fillOval(pixelX + 3*cellSize/4 - eyeSize/2, pixelY + cellSize/3 - eyeSize/2, eyeSize, eyeSize);
+
+            g.setStroke(new BasicStroke(2));
+            g.drawArc(pixelX + cellSize/4, pixelY + cellSize/2, cellSize/2, cellSize/4, 0, 180);
+
             g.setTransform(originalTransform);
-            g.setColor(originalColor);
+            g.setPaint(originalPaint);
 
             return true;
         }
@@ -189,23 +243,19 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
     // IGameMechanic implementation
     @Override
     public void onObjectDestroyed(GameObject object, MovementHandler handler) {
-        // Create particle effect when objects are destroyed
         WindowLogger.debug("Object destroyed: " + object.getLabel());
     }
 
     @Override
     public void beforeMovement(MovementHandler handler) {
-        // You could add custom logic before each movement
     }
 
     @Override
     public void afterMovement(MovementHandler handler) {
-        // You could add custom logic after each movement
     }
 
     @Override
     public void onFormulaProcessed(Formula formula, MovementHandler handler) {
-        // You could react to specific formulas being processed
         WindowLogger.debug("Formula processed: " + formula);
     }
 }

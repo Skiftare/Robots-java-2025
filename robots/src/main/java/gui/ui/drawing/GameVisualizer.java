@@ -53,8 +53,12 @@ public class GameVisualizer extends JPanel {
         requestFocusInWindow();
         setupKeyBindings();
 
+        this.modManager = modManager;
         this.movementHandler.setModManager(modManager);
         this.movementHandler.getFormulaHandler().setModManager(modManager);
+
+        modManager.setupCustomControls(this);
+
 
         Timer backgroundTimer = new Timer(50, e -> {
             boolean needsRepaint = false;

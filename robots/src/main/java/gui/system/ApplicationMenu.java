@@ -1,5 +1,6 @@
 package gui.system;
 
+import game.mods.GlobalModManager;
 import gui.MainApplicationFrame;
 import gui.system.localization.Language;
 import gui.system.localization.LocaleChangeListener;
@@ -15,6 +16,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyVetoException;
+import java.io.File;
 
 public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
     private final MainApplicationFrame mainFrame;
@@ -234,25 +236,24 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         JMenu modsMenu = new JMenu(
                 LocalizationManager.getInstance().getString("menu.mods")
         );
+        modsMenu.setMnemonic(KeyEvent.VK_M);
+
+        // Add menu item for mod management
         JMenuItem manageModsItem = new JMenuItem(
                 LocalizationManager.getInstance().getString("menu.mods.manage")
         );
         manageModsItem.addActionListener(e -> {
-            GameWindow gameWindow = mainFrame.getGameWindow();
-            if (gameWindow != null) {
-                GameVisualizer viz = gameWindow.getGameVisualizer();
-                ModManagementFrame modFrame = new ModManagementFrame(viz.getModManager());
-                mainFrame.addWindow(modFrame);
-            } else {
-                JOptionPane.showMessageDialog(
-                        mainFrame,
-                        LocalizationManager.getInstance().getString("mods.no.game.open"),
-                        LocalizationManager.getInstance().getString("mods.error"),
-                        JOptionPane.ERROR_MESSAGE
-                );
+            // Make sure GlobalModManager has the main frame reference
+            if (GlobalModManager.getInstance().getMainApplicationFrame() == null) {
+                GlobalModManager.getInstance().setMainApplicationFrame(mainFrame);
             }
+
+            // Show the mod management window
+            GlobalModManager.getInstance().showModManagementWindow();
         });
+
         modsMenu.add(manageModsItem);
+
         return modsMenu;
     }
 

@@ -1,5 +1,6 @@
 package gui;
 
+import game.mods.GlobalModManager;
 import gui.system.ApplicationMenu;
 import gui.system.closing.DefaultFrameClosingStrategy;
 import gui.system.closing.FrameCloseConfirmationDecorator;
@@ -18,6 +19,7 @@ import javax.swing.plaf.basic.BasicInternalFrameUI;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.File;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,6 +78,19 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                 resizeInternalFrames();
             }
         });
+    }
+    private void initializeModSystem() {
+        GlobalModManager.getInstance().setMainApplicationFrame(this);
+
+        // Load mods from the default mods directory
+        String modsDir = System.getProperty("user.dir") + File.separator + "mods";
+        GlobalModManager.getInstance().loadModsFromDirectory(modsDir);
+
+        // Add "Mods" menu option
+        JMenu fileMenu = getJMenuBar().getMenu(0); // Assuming the first menu is File
+        JMenuItem modsMenuItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.mods"));
+        modsMenuItem.addActionListener(e -> GlobalModManager.getInstance().showModManagementWindow());
+        fileMenu.add(modsMenuItem, 1); // Add after the first item
     }
 
     public void addWindow(JInternalFrame frame) {

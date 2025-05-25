@@ -1,5 +1,6 @@
 package gui.ui;
 
+import game.mods.GlobalModManager;
 import gui.MainApplicationFrame;
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
@@ -26,6 +27,7 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
 
         visualizer = new GameVisualizer();
         visualizer.setGameWindow(this);
+        GlobalModManager.getInstance().applyToGameVisualizer(visualizer);
         getContentPane().add(visualizer, BorderLayout.CENTER);
 
 
