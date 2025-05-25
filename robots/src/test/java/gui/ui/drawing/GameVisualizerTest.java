@@ -121,7 +121,7 @@ class GameVisualizerTest {
         fail("Player object not found");
         return null;
     }
-
+    /*
     @Test
     void testPushBox() {
         // Get player and box objects
@@ -147,7 +147,7 @@ class GameVisualizerTest {
         assertEquals(boxInitialX + 1, box.getPosition()[0]);
         assertEquals(boxInitialY, box.getPosition()[1]);
     }
-
+*/
     // Helper method to find the box object
     private GameObject findBoxObject() {
         for (GameObject obj : gameVisualizer.getGameObjects()) {

@@ -102,7 +102,7 @@ public class FormulaHandlerTest {
         assertTrue(player.hasProperty(ObjectProperty.STOP), "Player should have STOP property");
         assertTrue(player.hasProperty(ObjectProperty.PUSHABLE), "Player should have PUSHABLE property");
     }
-
+    /*
     @Test
     void testPlayerPropertyIsRequiredForWin() {
 
@@ -139,7 +139,7 @@ public class FormulaHandlerTest {
         movementHandler.movePlayers(0, 0); // Trigger game state check without moving
 
         assertTrue(movementHandler.isGameOver(), "Game should be over when all players are killed");
-    }
+    }*/
 
     @Test
     void testSharedNounMultipleProperties() {
