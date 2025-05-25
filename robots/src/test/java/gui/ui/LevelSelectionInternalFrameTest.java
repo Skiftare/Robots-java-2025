@@ -35,7 +35,7 @@ public class LevelSelectionInternalFrameTest {
         }
 
         @Override
-        protected void addWindow(JInternalFrame frame) {
+        public void addWindow(JInternalFrame frame) {
             // no-op
         }
 
