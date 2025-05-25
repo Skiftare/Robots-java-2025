@@ -78,7 +78,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         });
     }
 
-    protected void addWindow(JInternalFrame frame) {
+    public void addWindow(JInternalFrame frame) {
         FrameCloseConfirmationDecorator.addCloseConfirmation(frame);
         desktopPane.add(frame);
         frame.setVisible(true);

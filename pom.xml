@@ -9,6 +9,8 @@
 
     <modules>
         <module>robots</module>
+        <module>robots-mods-api</module>
+        <module>robots-mod-sdk</module>
     </modules>
 
 

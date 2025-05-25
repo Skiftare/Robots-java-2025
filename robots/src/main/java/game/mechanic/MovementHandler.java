@@ -2,9 +2,11 @@ package game.mechanic;
 
 import game.model.GameObject;
 import game.model.ObjectProperty;
+import game.mods.ModManager;
 import gui.ui.CoordinateGrid;
 import gui.system.sound.SoundManager;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -19,11 +21,15 @@ public class MovementHandler {
     private boolean gameWon = false;
     @Getter
     private boolean gameOver = false;
+    @Setter
+    private ModManager modManager;
+
 
     public MovementHandler(CoordinateGrid grid) {
         this.grid = grid;
         this.formulaHandler = new FormulaHandler(this);
     }
+
 
     public void addGameObject(GameObject object) {
         gameObjects.add(object);
@@ -44,20 +50,27 @@ public class MovementHandler {
     }
 
     public boolean movePlayers(int dx, int dy) {
+        if (modManager != null) {
+            modManager.notifyBeforeMovement(this);
+        }
+
         boolean moved = movePlayersInternal(dx, dy);
         boolean formulaChanged = formulaHandler.processFormulas();
 
-        // 1) play step sound only if we actually changed position
+        // Play step sound only if we actually changed position
         if (moved) {
             SoundManager.playMove();
         }
 
-        // 2) update game state & play death/win as needed
+        // Update game state & play death/win as needed
         if (moved || formulaChanged) {
             boolean wasGameOver = gameOver;
-            boolean wasGameWon  = gameWon;
+            boolean wasGameWon = gameWon;
             checkGameState();
+        }
 
+        if (modManager != null) {
+            modManager.notifyAfterMovement(this);
         }
 
         return moved || formulaChanged;
@@ -226,6 +239,9 @@ public class MovementHandler {
 
     // Removes an object from the game world
     public void removeGameObject(GameObject object) {
+        if (modManager != null) {
+            modManager.notifyObjectDestroyed(object, this);
+        }
         gameObjects.remove(object);
     }
 
