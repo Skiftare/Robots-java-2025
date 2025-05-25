@@ -4,15 +4,19 @@ import game.factory.GameObjectFactory;
 import game.mechanic.MovementHandler;
 import game.model.GameObject;
 import game.model.ObjectProperty;
-import gui.system.localization.LocalizationManager;
+import game.mods.ModManager;
+import game.mods.extensions_points.IBackgroundProvider;
 import gui.system.sound.SoundManager;
 import gui.ui.CoordinateGrid;
 import gui.ui.GameWindow;
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 
@@ -22,6 +26,11 @@ public class GameVisualizer extends JPanel {
     private int panelWidth = 0;
     private int panelHeight = 0;
     private final CoordinateGrid grid;
+
+    @Setter
+    @Getter
+    private ModManager modManager = new ModManager();
+    private long lastFrameTimestamp = System.currentTimeMillis();
 
     private GameWindow gameWindow;
 
@@ -43,6 +52,23 @@ public class GameVisualizer extends JPanel {
         setFocusable(true);
         requestFocusInWindow();
         setupKeyBindings();
+
+        this.movementHandler.setModManager(modManager);
+        this.movementHandler.getFormulaHandler().setModManager(modManager);
+
+        Timer backgroundTimer = new Timer(50, e -> {
+            boolean needsRepaint = false;
+            for (IBackgroundProvider provider : modManager.getBackgroundProviders()) {
+                if (provider.isDynamic()) {
+                    needsRepaint = true;
+                    break;
+                }
+            }
+            if (needsRepaint) {
+                repaint();
+            }
+        });
+        backgroundTimer.start();
     }
 
     private void setupKeyBindings() {
@@ -77,6 +103,21 @@ public class GameVisualizer extends JPanel {
                 movePlayerInCells(1, 0);
             }
         });
+
+
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (modManager.interceptKeyEvent(e)) {
+                    // Key was handled by a mod
+                    return;
+                }
+                // Otherwise process normally
+            }
+        });
+
+        // Let mods set up their controls
+        modManager.setupCustomControls(this);
     }
 
     /**
@@ -131,6 +172,9 @@ public class GameVisualizer extends JPanel {
         g2d.setColor(new Color(50, 50, 50));
         g2d.fillRect(0, 0, panelWidth, panelHeight);
 
+        lastFrameTimestamp = System.currentTimeMillis();
+        modManager.drawCustomBackgrounds(g2d, panelWidth, panelHeight, lastFrameTimestamp);
+
         // Рисуем сетку
         g2d.setColor(new Color(100, 100, 100));
         grid.drawGrid(g2d, panelWidth, panelHeight);
@@ -140,8 +184,13 @@ public class GameVisualizer extends JPanel {
         Point start = grid.getStartCoordinates(panelWidth, panelHeight);
 
         for (GameObject obj : movementHandler.getGameObjects()) {
-            obj.draw(g2d, cellSize, start);
+            // Let mods customize the drawing first
+            if (!modManager.tryCustomizeDrawing(obj, g2d, cellSize, start)) {
+                // If no mod handled it, use default drawing
+                obj.draw(g2d, cellSize, start);
+            }
         }
+
         g2d.setTransform(originalTransform);
     }
 

@@ -5,6 +5,9 @@ import gui.system.localization.Language;
 import gui.system.localization.LocaleChangeListener;
 import gui.system.localization.LocalizationManager;
 import gui.system.saving.SaveLoadDialog;
+import gui.ui.GameWindow;
+import gui.ui.ModManagementFrame;
+import gui.ui.drawing.GameVisualizer;
 import log.WindowLogger;
 
 import javax.swing.*;
@@ -37,6 +40,9 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         add(createLanguageMenu());
         add(createFileMenu());
         add(createSaveLoadMenu());  // Новый пункт меню для сохранения и загрузки
+
+        add(createModsMenu());  // Add the mods menu
+
     }
 
     private JMenu createSaveLoadMenu() {
@@ -48,6 +54,7 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
 
         saveLoadMenu.add(saveMenuItem);
         saveLoadMenu.add(loadMenuItem);
+
 
         return saveLoadMenu;
     }
@@ -166,6 +173,29 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
                  | IllegalAccessException | UnsupportedLookAndFeelException e) {
             WindowLogger.error(LocalizationManager.getInstance().getString("theme.system.exception.while.loading") + e.getMessage());
         }
+    }
+
+    // Add this method to ApplicationMenu class
+    private JMenu createModsMenu() {
+        JMenu modsMenu = new JMenu(LocalizationManager.getInstance().getString("menu.mods"));
+
+        JMenuItem manageModsItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.mods.manage"));
+        manageModsItem.addActionListener(e -> {
+            GameWindow gameWindow = mainFrame.getGameWindow();
+            if (gameWindow != null) {
+                GameVisualizer visualizer = gameWindow.getGameVisualizer();
+                ModManagementFrame modFrame = new ModManagementFrame(visualizer.getModManager());
+                mainFrame.addWindow(modFrame);
+            } else {
+                JOptionPane.showMessageDialog(mainFrame,
+                        LocalizationManager.getInstance().getString("mods.no.game.open"),
+                        LocalizationManager.getInstance().getString("mods.error"),
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        modsMenu.add(manageModsItem);
+
+        return modsMenu;
     }
 
     @Override

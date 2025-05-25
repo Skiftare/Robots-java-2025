@@ -4,12 +4,16 @@ import game.model.GameObject;
 import game.model.ObjectProperty;
 import game.model.formula.Formula;
 import game.model.formula.FormulaElement;
+import game.mods.ModManager;
+import lombok.Setter;
 
 import java.util.*;
 
 public class FormulaHandler {
     private final MovementHandler movementHandler;
     private final List<Formula> activeFormulas = new ArrayList<>();
+    @Setter
+    private ModManager modManager;
 
     public FormulaHandler(MovementHandler movementHandler) {
         this.movementHandler = movementHandler;
@@ -199,6 +203,9 @@ public class FormulaHandler {
                     newPropertiesMap.computeIfAbsent(obj, k -> new HashSet<>()).add(property);
                 }
             }
+            if (modManager != null) {
+                modManager.notifyFormulaProcessed(formula, movementHandler);
+            }
         }
 
         // Apply changes: add/remove properties
@@ -227,6 +234,7 @@ public class FormulaHandler {
                 }
             }
         }
+
 
         return propertiesChanged;
     }
