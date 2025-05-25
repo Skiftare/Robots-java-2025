@@ -72,7 +72,7 @@ public class ModManager {
     }
 
     // Registration methods used by ModRegistry
-    void registerBackgroundProvider(IBackgroundProvider provider) {
+    public void registerBackgroundProvider(IBackgroundProvider provider) {
         backgroundProviders.add(provider);
     }
 

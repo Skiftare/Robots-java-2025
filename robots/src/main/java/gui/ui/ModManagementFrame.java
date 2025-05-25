@@ -57,24 +57,91 @@ public class ModManagementFrame extends JInternalFrame {
     }
 
     private void loadMod() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
-            public boolean accept(File f) {
-                return f.isDirectory() || f.getName().toLowerCase().endsWith(".jar");
-            }
+        // Get the parent frame
+        Frame parentFrame = JOptionPane.getFrameForComponent(this);
 
-            public String getDescription() {
-                return "JAR Files (*.jar)";
+        // Create a custom dialog with path input option
+        JDialog pathDialog = new JDialog(parentFrame,
+                LocalizationManager.getInstance().getString("mods.load"), true);
+        pathDialog.setLayout(new BorderLayout());
+        pathDialog.setSize(500, 150);
+        pathDialog.setLocationRelativeTo(this);
+
+        // Create path input panel
+        JPanel inputPanel = new JPanel(new BorderLayout(5, 5));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Start in the current working directory
+        JTextField pathField = new JTextField(System.getProperty("user.dir"));
+        JButton browseButton = new JButton(LocalizationManager.getInstance().getString("browse"));
+
+        inputPanel.add(new JLabel(LocalizationManager.getInstance().getString("mods.path")), BorderLayout.NORTH);
+        inputPanel.add(pathField, BorderLayout.CENTER);
+        inputPanel.add(browseButton, BorderLayout.EAST);
+
+        // Create buttons panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton loadButton = new JButton(LocalizationManager.getInstance().getString("mods.load"));
+        JButton cancelButton = new JButton(LocalizationManager.getInstance().getString("cancel"));
+        buttonPanel.add(loadButton);
+        buttonPanel.add(cancelButton);
+
+        pathDialog.add(inputPanel, BorderLayout.CENTER);
+        pathDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Browse button action
+        browseButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser(pathField.getText());
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+                public boolean accept(File f) {
+                    return f.isDirectory() || f.getName().toLowerCase().endsWith(".jar");
+                }
+
+                public String getDescription() {
+                    return "JAR Files (*.jar)";
+                }
+            });
+
+            if (fileChooser.showOpenDialog(pathDialog) == JFileChooser.APPROVE_OPTION) {
+                pathField.setText(fileChooser.getSelectedFile().getAbsolutePath());
             }
         });
 
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            Path jarPath = fileChooser.getSelectedFile().toPath();
-            modManager.loadMod(jarPath);
+        // Cancel button action
+        cancelButton.addActionListener(e -> pathDialog.dispose());
+
+        // Load button action
+        loadButton.addActionListener(e -> {
+            String filePath = pathField.getText().trim();
+            File file = new File(filePath);
+
+            if (!file.exists()) {
+                JOptionPane.showMessageDialog(pathDialog,
+                        LocalizationManager.getInstance().getString("mods.file.not.found"),
+                        LocalizationManager.getInstance().getString("error"),
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!file.getName().toLowerCase().endsWith(".jar")) {
+                JOptionPane.showMessageDialog(pathDialog,
+                        LocalizationManager.getInstance().getString("mods.file.not.jar"),
+                        LocalizationManager.getInstance().getString("error"),
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            modManager.loadMod(file.toPath());
             updateModList();
-        }
+            pathDialog.dispose();
+        });
+
+        // Allow Enter key to submit
+        pathField.addActionListener(e -> loadButton.doClick());
+
+        pathDialog.setVisible(true);
     }
+
 
     private void unloadSelectedMod() {
         int selectedIndex = modList.getSelectedIndex();
