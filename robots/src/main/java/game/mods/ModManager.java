@@ -72,19 +72,19 @@ public class ModManager {
     }
 
     // Registration methods used by ModRegistry
-    void registerBackgroundProvider(IBackgroundProvider provider) {
+    public void registerBackgroundProvider(IBackgroundProvider provider) {
         backgroundProviders.add(provider);
     }
 
-    void registerControlAdapter(IControlAdapter adapter) {
+    public void registerControlAdapter(IControlAdapter adapter) {
         controlAdapters.add(adapter);
     }
 
-    void registerRenderAdapter(IRenderAdapter adapter) {
+    public void registerRenderAdapter(IRenderAdapter adapter) {
         renderAdapters.add(adapter);
     }
 
-    void registerGameMechanic(IGameMechanic mechanic) {
+    public void registerGameMechanic(IGameMechanic mechanic) {
         gameMechanics.add(mechanic);
     }
 

@@ -175,7 +175,6 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         }
     }
 
-    // Add this method to ApplicationMenu class
     private JMenu createModsMenu() {
         JMenu modsMenu = new JMenu(LocalizationManager.getInstance().getString("menu.mods"));
 
@@ -214,7 +213,6 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
             }
         }
 
-        // Update Test menu
         if (testMenu != null) {
             testMenu.setText(LocalizationManager.getInstance().getString("menu.test"));
             testMenu.getAccessibleContext().setAccessibleDescription(
@@ -242,7 +240,6 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
             }
         }
 
-        // Обновляем текст для кнопок Save и Load
         if (saveMenuItem != null) {
             saveMenuItem.setText(LocalizationManager.getInstance().getString("menu.save"));
         }
@@ -254,5 +251,6 @@ public class ApplicationMenu extends JMenuBar implements LocaleChangeListener {
         if (saveLoadMenu != null) {
             saveLoadMenu.setText(LocalizationManager.getInstance().getString("menu.saveLoad"));
         }
+
     }
 }
