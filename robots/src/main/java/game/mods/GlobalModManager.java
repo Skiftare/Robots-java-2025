@@ -5,6 +5,8 @@ import gui.system.profiling.Profile;
 import gui.ui.ModManagementFrame;
 import gui.ui.drawing.GameVisualizer;
 import log.WindowLogger;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,8 +20,11 @@ import java.util.Arrays;
  */
 public class GlobalModManager {
     private static GlobalModManager instance;
+    @Getter
     private final ModManager modManager = new ModManager();
     private ModManagementFrame modManagementFrame;
+    @Getter
+    @Setter
     private MainApplicationFrame mainApplicationFrame;
 
     private GlobalModManager() {
@@ -31,17 +36,6 @@ public class GlobalModManager {
             instance = new GlobalModManager();
         }
         return instance;
-    }
-
-    public void setMainApplicationFrame(MainApplicationFrame frame) {
-        this.mainApplicationFrame = frame;
-    }
-    public MainApplicationFrame getMainApplicationFrame() {
-        return mainApplicationFrame;
-    }
-
-    public ModManager getModManager() {
-        return modManager;
     }
 
     public void showModManagementWindow() {
@@ -60,8 +54,10 @@ public class GlobalModManager {
                 WindowLogger.error("Could not focus mod management window: " + e.getMessage());
             }
         }
+
     }
 
+    // Modify the loadModsFromDirectory method in GlobalModManager
     public void loadModsFromDirectory(String directory) {
         File modsDir = new File(directory);
         if (!modsDir.exists() || !modsDir.isDirectory()) {
@@ -77,11 +73,38 @@ public class GlobalModManager {
 
         Arrays.stream(jarFiles).forEach(file -> {
             try {
-                modManager.loadMod(file.toPath());
+                modManager.loadModAndStore(file.toPath());
             } catch (Exception e) {
                 WindowLogger.error("Failed to load mod from " + file.getName() + ": " + e.getMessage());
             }
         });
+    }
+
+    public void loadModsFromProfile(Profile profile) {
+        if (profile == null || profile.getModPaths() == null) {
+            WindowLogger.debug("Profile is null or has no mod paths");
+            return;
+        }
+
+        WindowLogger.debug("Loading mods from profile: " + profile.getModPaths().size() + " paths");
+        // Load all mods specified in the profile
+        for (String path : profile.getModPaths()) {
+            if (path == null) continue;
+
+            WindowLogger.debug("Attempting to load mod from: " + path);
+            File modFile = new File(path);
+            if (modFile.exists() && modFile.isFile()) {
+                try {
+                    // Use loadModAndStore to ensure mods are properly stored
+                    modManager.loadModAndStore(modFile.toPath());
+                    WindowLogger.debug("Successfully loaded mod from: " + path);
+                } catch (Exception e) {
+                    WindowLogger.error("Failed to load mod from profile: " + path + ", error: " + e.getMessage());
+                }
+            } else {
+                WindowLogger.debug("Mod file not found: " + path);
+            }
+        }
     }
 
     public void applyToGameVisualizer(GameVisualizer visualizer) {
@@ -105,24 +128,5 @@ public class GlobalModManager {
         }
     }
 
-    public void loadModsFromProfile(Profile profile) {
-        if (profile == null || profile.getModPaths() == null) return;
-
-        // Load all mods specified in the profile
-        for (String path : profile.getModPaths()) {
-            if (path == null) continue;
-
-            File modFile = new File(path);
-            if (modFile.exists() && modFile.isFile()) {
-                try {
-                    modManager.loadMod(modFile.toPath());
-                } catch (Exception e) {
-                    WindowLogger.error("Failed to load mod from profile: " + path);
-                }
-            } else {
-                WindowLogger.debug("Mod file not found: " + path);
-            }
-        }
-    }
 
 }

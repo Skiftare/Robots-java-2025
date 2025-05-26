@@ -15,14 +15,10 @@ import log.WindowLogger;
 import lombok.Getter;
 
 import javax.swing.*;
-import javax.swing.plaf.basic.BasicInternalFrameUI;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.File;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 
 import static java.lang.Math.round;
 
@@ -37,9 +33,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
 
     public MainApplicationFrame(Profile profile) {
         LocalizationManager.getInstance().addListener(this);
-
         this.currentProfile = profile;
-
         // размеры главного окна
         int inset = 50;
         Rectangle screen = GraphicsEnvironment
@@ -50,13 +44,14 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         setBounds(inset, inset, screen.width, screen.height);
         setContentPane(desktopPane);
 
-        showLevelSelectionMenu(currentProfile);
 
         LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
         setJMenuBar(new ApplicationMenu(this));
         updateTitle();
+        initializeModSystem();
+        showLevelSelectionMenu(currentProfile);
 
         // на закрытие — спросить, сохранить профиль
         closeStrategy = new DefaultFrameClosingStrategy(
@@ -79,18 +74,30 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             }
         });
     }
+
     private void initializeModSystem() {
-        GlobalModManager.getInstance().setMainApplicationFrame(this);
+        GlobalModManager modManager = GlobalModManager.getInstance();
 
-        // Load mods from the default mods directory
-        String modsDir = System.getProperty("user.dir") + File.separator + "mods";
-        GlobalModManager.getInstance().loadModsFromDirectory(modsDir);
+        // Load mods from the profile if available
+        if (currentProfile != null) {
+            modManager.loadModsFromProfile(currentProfile);
+        }
 
-        // Add "Mods" menu option
-        JMenu fileMenu = getJMenuBar().getMenu(0); // Assuming the first menu is File
-        JMenuItem modsMenuItem = new JMenuItem(LocalizationManager.getInstance().getString("menu.mods"));
-        modsMenuItem.addActionListener(e -> GlobalModManager.getInstance().showModManagementWindow());
-        fileMenu.add(modsMenuItem, 1); // Add after the first item
+        // Setup menu integration only if menu bar is available
+        JMenuBar menuBar = getJMenuBar();
+        if (menuBar != null) {
+            // Find the mods menu - don't hardcode index 3 as menu structure might change
+            for (int i = 0; i < menuBar.getMenuCount(); i++) {
+                JMenu menu = menuBar.getMenu(i);
+                if (menu != null && menu.getText() != null &&
+                        menu.getText().contains("Mods")) {
+                    JMenuItem openModManager = new JMenuItem(LocalizationManager.getInstance().getString("menu.mods.manage"));
+                    openModManager.addActionListener(e -> modManager.showModManagementWindow());
+                    menu.add(openModManager);
+                    break;
+                }
+            }
+        }
     }
 
     public void addWindow(JInternalFrame frame) {
@@ -194,7 +201,8 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                 try {
                     if (f.isIcon()) f.setIcon(false);
                     if (f.isMaximum()) f.setMaximum(false);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
 
             // Process intermediate changes
@@ -254,7 +262,8 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
                                 f.setIcon(true);
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
 
                 desktopPane.validate();
@@ -291,7 +300,9 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         );
 
         if (cur != null && choice == 0) {
-            mgr.saveProfile(createProfile(cur));
+            // Save the current profile with mod paths instead of creating a new one
+            updateCurrentProfileFrameStates();
+            mgr.saveProfile(currentProfile);
         } else if ((cur != null && choice == 1) || (cur == null && choice == 0)) {
             String name = JOptionPane.showInputDialog(
                     this,
@@ -301,6 +312,28 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             if (name != null && !name.trim().isEmpty()) {
                 mgr.saveProfile(createProfile(name.trim()));
             }
+        }
+    }
+
+    // Add this helper method to update frame states in the current profile
+    private void updateCurrentProfileFrameStates() {
+        int z = 0;
+        for (JInternalFrame f : desktopPane.getAllFrames()) {
+            String key = f.getClass().getSimpleName();
+            Rectangle bounds;
+
+            if (f.isIcon() || f.isMaximum()) {
+                bounds = f.getNormalBounds();
+                if (bounds == null) {
+                    bounds = new Rectangle(10, 10, 400, 300);
+                }
+            } else {
+                bounds = f.getBounds();
+            }
+
+            currentProfile.setFrameState(key, new Profile.FrameState(
+                    bounds, f.isIcon(), f.isMaximum(), f.isVisible(), z++
+            ));
         }
     }
 

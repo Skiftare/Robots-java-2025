@@ -98,7 +98,12 @@ public class Profile implements Serializable {
         return profileName;
     }
 
+    // Update the readObject method in Profile.java
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
+        // Ensure modPaths is initialized after deserialization
+        if (modPaths == null) {
+            modPaths = new HashSet<>();
+        }
     }
 }

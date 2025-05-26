@@ -15,6 +15,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 
@@ -64,6 +65,18 @@ public class ModManager {
             // Catch any exceptions during mod initialization to prevent crashes
             WindowLogger.error("Error initializing mod: " + e.getMessage());
         }
+    }
+    // Add this method to ModManager.java after the loadMod method
+    public void loadModAndStore(Path jarPath) {
+        // First import the mod to our mods directory
+        String storedPath = ModFileManager.importMod(jarPath);
+        if (storedPath == null) {
+            WindowLogger.error("Failed to store mod file: " + jarPath);
+            return;
+        }
+
+        // Then load it from the stored location
+        loadMod(Paths.get(storedPath));
     }
 
     public void unloadMod(String modName) {

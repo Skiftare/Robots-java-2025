@@ -25,28 +25,8 @@ public class FractalGenerator {
     private final AtomicBoolean isGenerating = new AtomicBoolean(false);
     private final SecureRandom random = new SecureRandom();
     private final AfinCompose afinCompose;
-    private final List<Point> seedPoints = new ArrayList<>();
     private Transformation currentTransformation; // Single active transformation
 
-    private int fractalType = 0; // Current fractal type
-
-
-    private int symmetry = 3;
-    private int currentPointLimit = 10; // Starting small
-    private int maxPoints = 5000000;
-
-    // Growth factor - points to add with each interaction
-    private int growthFactor = 10;
-    private int interactionCount = 0;
-
-    // Constants for better point distribution
-    private static final double X_MIN = -1.5;
-    private static final double X_MAX = 1.5;
-    private static final double Y_MIN = -1.5;
-    private static final double Y_MAX = 1.5;
-
-    public record ColoredPoint(double x, double y, Color color, int hitCount) {
-    }
 
     private static final Transformation[] TRANSFORMATIONS = new Transformation[]{
             new HeartTransformation(),
@@ -54,6 +34,18 @@ public class FractalGenerator {
             new SinusoidalTransformation(),
             new SphericalTransformation()
     };
+
+    private int symmetry = random.nextInt(0,9);
+    private int currentPointLimit = 2000; // Starting small
+    private int maxPoints = 5000000;
+    private int fractalType = random.nextInt(0,TRANSFORMATIONS.length); // Current fractal type
+
+    private int growthFactor = 120;
+    private int interactionCount = 0;
+
+
+    public record ColoredPoint(double x, double y, Color color, int hitCount) {
+    }
 
 
     public FractalGenerator() {
@@ -137,12 +129,13 @@ public class FractalGenerator {
 
             // Calculate growth factor with more smooth scaling
             if (interactionCount <= 8) {
-                growthFactor *= 1.8; // Faster initial growth
+                growthFactor *= 5; // Faster initial growth
             } else {
                 growthFactor = (int) (growthFactor * 1.2); // Slower later growth
             }
 
-            growthFactor = Math.min(15, growthFactor);
+            growthFactor = Math.max(15, growthFactor);
+            growthFactor = Math.min(growthFactor, 1212); // Cap growth factor
 
             currentPointLimit += growthFactor;
             currentPointLimit = Math.min(currentPointLimit, maxPoints);
