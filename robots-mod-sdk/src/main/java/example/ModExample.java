@@ -23,6 +23,7 @@ import java.util.Random;
 public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, IRenderAdapter, IGameMechanic {
     private static final Random random = new Random();
     private final Color starColor = new Color(255, 255, 180);
+    private final FractalGenerator fractalGenerator = new FractalGenerator();
 
     // Use parallel arrays instead of a Star class
     private final List<Integer> starX = new ArrayList<>();
@@ -62,7 +63,6 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
         registry.registerControlAdapter(this);
         registry.registerRenderAdapter(this);
         registry.registerGameMechanic(this);
-        generateStars(300);
         WindowLogger.debug("Ultimate Mod Example initialized with all extensions!");
     }
 
@@ -71,61 +71,16 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
         WindowLogger.debug("Ultimate Mod Example shutting down!");
     }
 
-    private void generateStars(int count) {
-        // Clear all lists
-        starX.clear();
-        starY.clear();
-        starBrightness.clear();
-        starSize.clear();
 
-        // Generate new stars
-        for (int i = 0; i < count; i++) {
-            starX.add(random.nextInt(prevWidth));
-            starY.add(random.nextInt(prevHeight));
-            starBrightness.add(random.nextFloat() * 0.5f + 0.5f); // 0.5-1.0 range
-            starSize.add(1 + random.nextInt(3));
-        }
-    }
-
-    // IBackgroundProvider implementation with improved star rendering
     @Override
     public void drawBackground(Graphics2D g, int width, int height, long timestamp) {
-        // Check if window size changed - if so, redistribute stars
-        if (width != prevWidth || height != prevHeight) {
-            prevWidth = width;
-            prevHeight = height;
-            generateStars(150);
-        }
-
-        // Twinkle stars less frequently (every 2 seconds)
-        if (timestamp - lastStarUpdate > 2000) {
-            for (int i = 0; i < starX.size(); i++) {
-                // Sometimes change brightness (5% chance)
-                if (random.nextInt(100) < 5) {
-                    starBrightness.set(i, random.nextFloat() * 0.5f + 0.5f);
-                }
-
-                // Small chance to relocate a star (2% chance)
-                if (random.nextInt(100) < 2) {
-                    starX.set(i, random.nextInt(width));
-                    starY.set(i, random.nextInt(height));
-                }
-            }
-            lastStarUpdate = timestamp;
-        }
-
-        // Draw stars with proper brightness
-        for (int i = 0; i < starX.size(); i++) {
-            // Apply brightness to star color
-            float brightness = starBrightness.get(i);
-            Color starColorWithBrightness = new Color(
-                    Math.min(255, (int)(starColor.getRed() * brightness)),
-                    Math.min(255, (int)(starColor.getGreen() * brightness)),
-                    Math.min(255, (int)(starColor.getBlue() * brightness))
-            );
-
-            g.setColor(starColorWithBrightness);
-            g.fillOval(starX.get(i), starY.get(i), starSize.get(i), starSize.get(i));
+        // Отрисовка фрактальных точек
+        List<Point> points = fractalGenerator.getFractalPoints();
+        g.setColor(Color.WHITE);
+        for (Point point : points) {
+            int x = (int) (width / 2 + point.x() * 100); // Масштабирование и центрирование
+            int y = (int) (height / 2 + point.y() * 100);
+            g.fillRect(x, y, 2, 2); // Рисуем точку
         }
     }
 
@@ -146,6 +101,10 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
 
     @Override
     public boolean interceptKeyEvent(KeyEvent e) {
+        if (e.getID() == KeyEvent.KEY_PRESSED) {
+            fractalGenerator.addEvent(e); // Добавляем событие в очередь
+            return true;
+        }
         if (e.getID() != KeyEvent.KEY_PRESSED) {
             return false;
         }
@@ -190,7 +149,7 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
 
     // IRenderAdapter implementation with fixed rainbow effect
     @Override
-    public boolean customizeDraw(GameObject object, Graphics2D g, int cellSize, Point start) {
+    public boolean customizeDraw(GameObject object, Graphics2D g, int cellSize, java.awt.Point start) {
         // Add rainbow effect to player objects when enabled
         if (rainbowMode && object.hasProperty(ObjectProperty.PLAYER)) {
             // Update rotation
@@ -221,15 +180,15 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
             );
             g.setPaint(gradient);
 
-            g.fillRoundRect(pixelX, pixelY, cellSize, cellSize, cellSize/3, cellSize/3);
+            g.fillRoundRect(pixelX, pixelY, cellSize, cellSize, cellSize / 3, cellSize / 3);
 
             g.setColor(Color.BLACK);
             int eyeSize = cellSize / 6;
-            g.fillOval(pixelX + cellSize/4 - eyeSize/2, pixelY + cellSize/3 - eyeSize/2, eyeSize, eyeSize);
-            g.fillOval(pixelX + 3*cellSize/4 - eyeSize/2, pixelY + cellSize/3 - eyeSize/2, eyeSize, eyeSize);
+            g.fillOval(pixelX + cellSize / 4 - eyeSize / 2, pixelY + cellSize / 3 - eyeSize / 2, eyeSize, eyeSize);
+            g.fillOval(pixelX + 3 * cellSize / 4 - eyeSize / 2, pixelY + cellSize / 3 - eyeSize / 2, eyeSize, eyeSize);
 
             g.setStroke(new BasicStroke(2));
-            g.drawArc(pixelX + cellSize/4, pixelY + cellSize/2, cellSize/2, cellSize/4, 0, 180);
+            g.drawArc(pixelX + cellSize / 4, pixelY + cellSize / 2, cellSize / 2, cellSize / 4, 0, 180);
 
             g.setTransform(originalTransform);
             g.setPaint(originalPaint);
