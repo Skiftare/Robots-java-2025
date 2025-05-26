@@ -8,9 +8,10 @@ import gui.ui.drawing.GameVisualizer;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.logging.Logger;
 
 public class GameWindow extends JInternalFrame implements LocaleChangeListener {
-    private final int currentLevel;
+    private int currentLevel;
     private final MainApplicationFrame mainFrame;
     private final GameVisualizer visualizer;
 
@@ -71,6 +72,7 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
     }
 
     public void onLevelWon() {
+
         SwingUtilities.invokeLater(() -> {
             int choice = JOptionPane.showOptionDialog(
                     this,
@@ -88,9 +90,12 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
             );
 
             if (choice == 0) {
+                Logger.getAnonymousLogger().info("Переход на следующий уровень: " + (currentLevel + 1));
                 int nextLevel = currentLevel + 1;
+                currentLevel+=1;
                 mainFrame.updateProgress(nextLevel); // <--- Обновляем прогресс на следующий уровень
                 if (nextLevel <= 3) {
+                    Logger.getAnonymousLogger().info("Загрузка уровня: " + nextLevel);
                     loadLevel(nextLevel);
                     updateTitle();
                 } else {
@@ -102,9 +107,11 @@ public class GameWindow extends JInternalFrame implements LocaleChangeListener {
                     openMenu();
                 }
             } else if (choice == 1) {
+                Logger.getAnonymousLogger().info("Повторная загрузка уровня: " + currentLevel);
                 mainFrame.updateProgress(currentLevel);
                 loadLevel(currentLevel);
             } else {
+                Logger.getAnonymousLogger().info("Возврат в меню из уровня: " + currentLevel);
                 mainFrame.updateProgress(currentLevel);
                 openMenu();
             }

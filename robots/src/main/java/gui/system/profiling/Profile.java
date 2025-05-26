@@ -24,11 +24,8 @@ public class Profile implements Serializable {
         this.language = language;
     }
 
+    @Getter
     private int highestLevelCompleted = 0;  // последний пройденный уровень
-
-    public int getHighestLevelCompleted() {
-        return highestLevelCompleted;
-    }
 
     public void setHighestLevelCompleted(int highestLevelCompleted) {
         if (highestLevelCompleted > this.highestLevelCompleted) {
