@@ -8,7 +8,9 @@ import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 public class Profile implements Serializable {
@@ -18,6 +20,37 @@ public class Profile implements Serializable {
     private final Map<String, FrameState> frameStates = new HashMap<>();
     private final String language;
     private final String profileName;
+    // Add to robots/src/main/java/gui/system/profiling/Profile.java
+    private Set<String> modPaths = new HashSet<>();  // Changed from final for serialization/deserialization
+
+    public Set<String> getModPaths() {
+        if (modPaths == null) {
+            modPaths = new HashSet<>();
+        }
+        return new HashSet<>(modPaths);
+    }
+
+    public void addModPath(String path) {
+        if (modPaths == null) {
+            modPaths = new HashSet<>();
+        }
+        modPaths.add(path);
+    }
+
+    public void removeModPath(String path) {
+        if (modPaths == null) {
+            return;
+        }
+        modPaths.remove(path);
+    }
+
+    public void clearModPaths() {
+        if (modPaths == null) {
+            modPaths = new HashSet<>();
+            return;
+        }
+        modPaths.clear();
+    }
 
     public Profile(String profileName, String language) {
         this.profileName = profileName;

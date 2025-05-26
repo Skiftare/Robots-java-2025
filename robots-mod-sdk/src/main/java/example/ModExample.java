@@ -22,18 +22,7 @@ import java.util.Random;
 
 public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, IRenderAdapter, IGameMechanic {
     private static final Random random = new Random();
-    private final Color starColor = new Color(255, 255, 180);
     private final FractalGenerator fractalGenerator = new FractalGenerator();
-
-    // Use parallel arrays instead of a Star class
-    private final List<Integer> starX = new ArrayList<>();
-    private final List<Integer> starY = new ArrayList<>();
-    private final List<Float> starBrightness = new ArrayList<>();
-    private final List<Integer> starSize = new ArrayList<>();
-
-    private int prevWidth = 800;
-    private int prevHeight = 600;
-    private long lastStarUpdate = 0;
     private float playerRotation = 0;
     private boolean rainbowMode = false;
 
@@ -59,28 +48,63 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
 
     @Override
     public void initialize(ModRegistry registry) {
+        WindowLogger.debug("[MOD] Starting registration of " + getName());
+
         registry.registerBackgroundProvider(this);
+        WindowLogger.debug("[MOD] BackgroundProvider registered");
+
         registry.registerControlAdapter(this);
+        WindowLogger.debug("[MOD] ControlAdapter registered");
+
         registry.registerRenderAdapter(this);
+        WindowLogger.debug("[MOD] RenderAdapter registered");
+
         registry.registerGameMechanic(this);
-        WindowLogger.debug("Ultimate Mod Example initialized with all extensions!");
+        WindowLogger.debug("[MOD] GameMechanic registered");
+
+        WindowLogger.debug("[MOD] Ultimate Mod Example initialization complete!");
     }
 
     @Override
     public void shutdown() {
         WindowLogger.debug("Ultimate Mod Example shutting down!");
+        fractalGenerator.shutdown();
     }
 
 
     @Override
     public void drawBackground(Graphics2D g, int width, int height, long timestamp) {
-        // Отрисовка фрактальных точек
-        List<Point> points = fractalGenerator.getFractalPoints();
+        // Background gradient
+        GradientPaint bgGradient = new GradientPaint(
+                0, 0, new Color(5, 5, 20),
+                width, height, new Color(15, 15, 40)
+        );
+        g.setPaint(bgGradient);
+        g.fillRect(0, 0, width, height);
+
+        // Show mod status information
         g.setColor(Color.WHITE);
-        for (Point point : points) {
-            int x = (int) (width / 2 + point.x() * 100); // Масштабирование и центрирование
-            int y = (int) (height / 2 + point.y() * 100);
-            g.fillRect(x, y, 2, 2); // Рисуем точку
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        g.drawString("Ultimate Fractal Mod - Press keys to grow the fractal", 20, 20);
+        g.drawString("Press 1-9 to change symmetry, F to change fractal type, C to clear", 20, 40);
+
+        // Draw fractal points with their colors
+        List<FractalGenerator.ColoredPoint> points = fractalGenerator.getFractalPoints();
+        g.drawString("Points: " + points.size(), 20, 60);
+
+        // Draw each point
+        for (FractalGenerator.ColoredPoint point : points) {
+            // Scale and center the point with better zoom
+            int x = (int) (width / 2 + point.x() * width/3.5);
+            int y = (int) (height / 2 + point.y() * height/3.5);
+
+            // Skip if outside window
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+
+            // Draw with appropriate color
+            g.setColor(point.color());
+            int size = Math.min(3, 1 + (int)(Math.log1p(point.hitCount()) / 3));
+            g.fillRect(x, y, size, size);
         }
     }
 
@@ -102,9 +126,10 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
     @Override
     public boolean interceptKeyEvent(KeyEvent e) {
         if (e.getID() == KeyEvent.KEY_PRESSED) {
-            fractalGenerator.addEvent(e); // Добавляем событие в очередь
-            return true;
+            WindowLogger.debug("[MOD] Key pressed: " + KeyEvent.getKeyText(e.getKeyCode()));
+            fractalGenerator.addEvent(e);
         }
+
         if (e.getID() != KeyEvent.KEY_PRESSED) {
             return false;
         }
@@ -114,7 +139,7 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
         // Toggle rainbow mode with R key
         if (keyCode == KeyEvent.VK_R) {
             rainbowMode = !rainbowMode;
-            WindowLogger.debug("Rainbow mode: " + (rainbowMode ? "ON" : "OFF"));
+            WindowLogger.debug("[MOD] Rainbow mode toggled: " + (rainbowMode ? "ON" : "OFF"));
             return true;
         }
 

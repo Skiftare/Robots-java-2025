@@ -27,6 +27,14 @@
                   <mainClass>example.ModExample</mainClass>
                 </transformer>
               </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <includes>
+                    <include>example/**</include>
+                  </includes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>

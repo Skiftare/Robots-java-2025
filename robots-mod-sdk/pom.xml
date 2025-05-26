@@ -57,6 +57,15 @@
                                     <mainClass>example.ModExample</mainClass>
                                 </transformer>
                             </transformers>
+                            <!-- Add this to make sure all classes are included -->
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <includes>
+                                        <include>example/**</include>
+                                    </includes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>

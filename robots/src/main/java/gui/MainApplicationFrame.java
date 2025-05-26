@@ -185,6 +185,7 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
 
     public void applyProfile(Profile profile) {
         this.currentProfile = profile;
+        GlobalModManager.getInstance().loadModsFromProfile(profile);
 
         // Process in multiple phases to ensure correct state restoration
         SwingUtilities.invokeLater(() -> {
@@ -266,6 +267,8 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
 
     public void saveProfileOnExit() {
         ProfileManager mgr = new ProfileManager();
+        GlobalModManager.getInstance().saveModsToProfile(currentProfile);
+
         String cur = currentProfile != null
                 ? currentProfile.getProfileName()
                 : null;

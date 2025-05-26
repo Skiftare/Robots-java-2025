@@ -1,6 +1,7 @@
 package game.mods;
 
 import gui.MainApplicationFrame;
+import gui.system.profiling.Profile;
 import gui.ui.ModManagementFrame;
 import gui.ui.drawing.GameVisualizer;
 import log.WindowLogger;
@@ -88,4 +89,40 @@ public class GlobalModManager {
             visualizer.setModManager(modManager);
         }
     }
+    public void saveModsToProfile(Profile profile) {
+        if (profile == null) return;
+
+        // Clear existing mod paths
+        profile.clearModPaths();
+
+        // Save currently loaded mods to profile
+        for (IMod mod : modManager.getLoadedMods()) {
+            // Get the source file for this mod if available
+            String sourcePath = modManager.getSourcePathForMod(mod.getName());
+            if (sourcePath != null) {
+                profile.addModPath(sourcePath);
+            }
+        }
+    }
+
+    public void loadModsFromProfile(Profile profile) {
+        if (profile == null || profile.getModPaths() == null) return;
+
+        // Load all mods specified in the profile
+        for (String path : profile.getModPaths()) {
+            if (path == null) continue;
+
+            File modFile = new File(path);
+            if (modFile.exists() && modFile.isFile()) {
+                try {
+                    modManager.loadMod(modFile.toPath());
+                } catch (Exception e) {
+                    WindowLogger.error("Failed to load mod from profile: " + path);
+                }
+            } else {
+                WindowLogger.debug("Mod file not found: " + path);
+            }
+        }
+    }
+
 }

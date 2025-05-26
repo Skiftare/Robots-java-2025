@@ -1,34 +1,64 @@
 package game.mods;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
  * Responsible for loading mod JARs
  */
 public class ModLoader {
+    // In ModLoader class where you load mods
     public IMod loadMod(Path jarPath) throws IOException {
-        URL jarUrl = jarPath.toUri().toURL();
+        URL url = jarPath.toUri().toURL();
+        URLClassLoader classLoader = new URLClassLoader(
+                new URL[]{url},
+                getClass().getClassLoader()  // Use parent classloader
+        );
 
-        // Create isolated class loader for this mod
-        try (URLClassLoader classLoader = new URLClassLoader(
-                new URL[] { jarUrl },
-                getClass().getClassLoader())) {
+        try {
+            // Look for mod.properties or similar to identify the main mod class
+            JarFile jarFile = new JarFile(jarPath.toFile());
+            Enumeration<JarEntry> entries = jarFile.entries();
 
-            // Use ServiceLoader to find implementations of IMod
-            ServiceLoader<IMod> serviceLoader = ServiceLoader.load(IMod.class, classLoader);
+            // Find main class that implements IMod
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                if (entry.getName().endsWith(".class")) {
+                    String className = entry.getName().replace('/', '.').replace(".class", "");
 
-            for (IMod mod : serviceLoader) {
-                return mod; // Return the first mod found
+                    try {
+                        Class<?> loadedClass = classLoader.loadClass(className);
+                        if (IMod.class.isAssignableFrom(loadedClass) &&
+                                !Modifier.isAbstract(loadedClass.getModifiers()) &&
+                                !loadedClass.isInterface()) {
+
+                            // Found a concrete implementation of IMod
+                            Object instance = loadedClass.getDeclaredConstructor().newInstance();
+                            return (IMod) instance;
+                        }
+                    } catch (ClassNotFoundException | NoSuchMethodException |
+                             IllegalAccessException | InstantiationException |
+                             InvocationTargetException e) {
+                        // Log and continue - this class might not be the mod class
+                        continue;
+                    }
+                }
             }
-
-            throw new IOException("No IMod implementation found in JAR: " + jarPath);
+            jarFile.close();
+        } catch (Exception e) {
+            throw new IOException("Failed to load mod: " + e.getMessage(), e);
         }
+
+        throw new IOException("No valid mod class found in JAR");
     }
 }

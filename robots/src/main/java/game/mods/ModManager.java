@@ -37,6 +37,8 @@ public class ModManager {
 
     private final ModLoader loader = new ModLoader();
 
+    private final Map<String, String> modSourcePaths = new HashMap<>();
+
     public void loadMod(Path jarPath) {
         try {
             IMod mod = loader.loadMod(jarPath);
@@ -51,6 +53,9 @@ public class ModManager {
             mod.initialize(registry);
 
             loadedMods.put(mod.getName(), mod);
+            // Store the source path
+            modSourcePaths.put(mod.getName(), jarPath.toAbsolutePath().toString());
+
             WindowLogger.debug("Loaded mod: " + mod.getName() + " v" + mod.getVersion());
 
         } catch (IOException e) {
@@ -69,14 +74,20 @@ public class ModManager {
                 mod.shutdown();
             } catch (Exception e) {
                 WindowLogger.error("Error during mod shutdown: " + e.getMessage());
-                // Continue with removal regardless of shutdown errors
             }
+
+            // Remove source path
+            modSourcePaths.remove(modName);
 
             // Remove all registered components from this mod
             removeModComponents(modName);
 
             WindowLogger.debug("Unloaded mod: " + modName);
         }
+    }
+
+    public String getSourcePathForMod(String modName) {
+        return modSourcePaths.get(modName);
     }
 
     private void removeModComponents(String modName) {
@@ -259,4 +270,5 @@ public class ModManager {
         }
         return false;
     }
+
 }
