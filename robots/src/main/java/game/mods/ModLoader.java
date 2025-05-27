@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Logger;
 
 /**
  * Responsible for loading mod JARs
@@ -22,15 +23,13 @@ public class ModLoader {
         URL url = jarPath.toUri().toURL();
         URLClassLoader classLoader = new URLClassLoader(
                 new URL[]{url},
-                getClass().getClassLoader()  // Use parent classloader
+                getClass().getClassLoader()
         );
 
         try {
-            // Look for mod.properties or similar to identify the main mod class
             JarFile jarFile = new JarFile(jarPath.toFile());
             Enumeration<JarEntry> entries = jarFile.entries();
 
-            // Find main class that implements IMod
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
                 if (entry.getName().endsWith(".class")) {
@@ -41,16 +40,13 @@ public class ModLoader {
                         if (IMod.class.isAssignableFrom(loadedClass) &&
                                 !Modifier.isAbstract(loadedClass.getModifiers()) &&
                                 !loadedClass.isInterface()) {
-
-                            // Found a concrete implementation of IMod
                             Object instance = loadedClass.getDeclaredConstructor().newInstance();
                             return (IMod) instance;
                         }
                     } catch (ClassNotFoundException | NoSuchMethodException |
                              IllegalAccessException | InstantiationException |
                              InvocationTargetException e) {
-                        // Log and continue - this class might not be the mod class
-                        continue;
+                        Logger.getAnonymousLogger().info(e.getMessage());
                     }
                 }
             }

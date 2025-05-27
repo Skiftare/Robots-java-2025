@@ -83,21 +83,8 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
             modManager.loadModsFromProfile(currentProfile);
         }
 
-        // Setup menu integration only if menu bar is available
-        JMenuBar menuBar = getJMenuBar();
-        if (menuBar != null) {
-            // Find the mods menu - don't hardcode index 3 as menu structure might change
-            for (int i = 0; i < menuBar.getMenuCount(); i++) {
-                JMenu menu = menuBar.getMenu(i);
-                if (menu != null && menu.getText() != null &&
-                        menu.getText().contains("Mods")) {
-                    JMenuItem openModManager = new JMenuItem(LocalizationManager.getInstance().getString("menu.mods.manage"));
-                    openModManager.addActionListener(e -> modManager.showModManagementWindow());
-                    menu.add(openModManager);
-                    break;
-                }
-            }
-        }
+
+
     }
 
     public void addWindow(JInternalFrame frame) {
@@ -315,7 +302,6 @@ public class MainApplicationFrame extends JFrame implements LocaleChangeListener
         }
     }
 
-    // Add this helper method to update frame states in the current profile
     private void updateCurrentProfileFrameStates() {
         int z = 0;
         for (JInternalFrame f : desktopPane.getAllFrames()) {

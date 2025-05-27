@@ -10,7 +10,7 @@ import java.util.*;
  * Manages the storage and retrieval of mod files
  */
 public class ModFileManager {
-    private static final String MODS_DIR = "mods";
+    static final String MODS_DIR = "mods";
 
     /**
      * Ensures the mods directory exists
@@ -28,9 +28,7 @@ public class ModFileManager {
         }
     }
 
-    /**
-     * Copies a mod file to the mods directory and returns the new path
-     */
+
     public static String importMod(Path sourcePath) {
         if (sourcePath == null || !Files.exists(sourcePath)) {
             WindowLogger.error("Invalid mod source path");
@@ -41,12 +39,10 @@ public class ModFileManager {
             String fileName = sourcePath.getFileName().toString();
             Path targetPath = getModsDirectory().resolve(fileName);
 
-            // If the file already exists in the mods directory, no need to copy
             if (Files.exists(targetPath) && Files.isSameFile(sourcePath, targetPath)) {
                 return targetPath.toString();
             }
 
-            // Copy with replace to overwrite any existing version
             Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
             WindowLogger.debug("Imported mod to: " + targetPath);
             return targetPath.toString();

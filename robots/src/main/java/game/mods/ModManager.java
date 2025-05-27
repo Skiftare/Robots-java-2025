@@ -19,9 +19,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 
-/**
- * Central coordinator for all mod functionality
- */
+
 public class ModManager {
     private final Map<String, IMod> loadedMods = new HashMap<>();
     @Getter
@@ -30,7 +28,6 @@ public class ModManager {
     private final List<IRenderAdapter> renderAdapters = new ArrayList<>();
     private final List<IGameMechanic> gameMechanics = new ArrayList<>();
 
-    // Maps to track which mod registered which component
     private final Map<IBackgroundProvider, String> backgroundProviderSources = new HashMap<>();
     private final Map<IControlAdapter, String> controlAdapterSources = new HashMap<>();
     private final Map<IRenderAdapter, String> renderAdapterSources = new HashMap<>();
@@ -49,12 +46,10 @@ public class ModManager {
                 return;
             }
 
-            // Register the mod
             ModRegistry registry = new ModRegistry(this);
             mod.initialize(registry);
 
             loadedMods.put(mod.getName(), mod);
-            // Store the source path
             modSourcePaths.put(mod.getName(), jarPath.toAbsolutePath().toString());
 
             WindowLogger.debug("Loaded mod: " + mod.getName() + " v" + mod.getVersion());
@@ -62,37 +57,30 @@ public class ModManager {
         } catch (IOException e) {
             WindowLogger.error("Failed to load mod: " + e.getMessage());
         } catch (Exception e) {
-            // Catch any exceptions during mod initialization to prevent crashes
             WindowLogger.error("Error initializing mod: " + e.getMessage());
         }
     }
-    // Add this method to ModManager.java after the loadMod method
     public void loadModAndStore(Path jarPath) {
-        // First import the mod to our mods directory
         String storedPath = ModFileManager.importMod(jarPath);
         if (storedPath == null) {
             WindowLogger.error("Failed to store mod file: " + jarPath);
             return;
         }
 
-        // Then load it from the stored location
         loadMod(Paths.get(storedPath));
     }
 
     public void unloadMod(String modName) {
         IMod mod = loadedMods.remove(modName);
         if (mod != null) {
-            // Call the mod's shutdown method inside a try-catch to prevent issues
             try {
                 mod.shutdown();
             } catch (Exception e) {
                 WindowLogger.error("Error during mod shutdown: " + e.getMessage());
             }
 
-            // Remove source path
             modSourcePaths.remove(modName);
 
-            // Remove all registered components from this mod
             removeModComponents(modName);
 
             WindowLogger.debug("Unloaded mod: " + modName);
@@ -170,9 +158,7 @@ public class ModManager {
         gameMechanicSources.put(mechanic, currentModName);
     }
 
-    // Helper method to get the name of the mod currently being registered
     private String getCurrentModName() {
-        // This gets the calling class through the stack trace
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         for (int i = 2; i < stackTrace.length; i++) {
             String className = stackTrace[i].getClassName();
@@ -180,7 +166,6 @@ public class ModManager {
                 continue;
             }
 
-            // Find the mod that's registering the component
             for (IMod mod : loadedMods.values()) {
                 try {
                     Class<?> modClass = mod.getClass();
@@ -188,7 +173,7 @@ public class ModManager {
                         return mod.getName();
                     }
                 } catch (Exception e) {
-                    // Skip if we can't determine the package
+                    // Skip
                 }
             }
             break;
@@ -196,7 +181,6 @@ public class ModManager {
         return "unknown";
     }
 
-    // Public accessor methods for the game to use
 
     public void drawCustomBackgrounds(Graphics2D g, int width, int height, long timestamp) {
         for (IBackgroundProvider provider : backgroundProviders) {

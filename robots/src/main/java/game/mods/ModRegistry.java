@@ -7,9 +7,7 @@ import game.mods.extensions_points.IRenderAdapter;
 
 import java.util.List;
 
-/**
- * Registry for mods to add their custom features
- */
+
 public class ModRegistry {
     private final ModManager manager;
 

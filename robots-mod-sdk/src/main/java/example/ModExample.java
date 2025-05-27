@@ -19,12 +19,14 @@ import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
+import java.awt.image.BufferedImage;
 public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, IRenderAdapter, IGameMechanic {
     private static final Random random = new Random();
     private final FractalGenerator fractalGenerator = new FractalGenerator();
     private float playerRotation = 0;
     private boolean rainbowMode = false;
+    private BufferedImage fractalBuffer;
+    private int lastWidth, lastHeight;
 
     @Override
     public String getName() {
@@ -48,21 +50,15 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
 
     @Override
     public void initialize(ModRegistry registry) {
-        WindowLogger.debug("[MOD] Starting registration of " + getName());
 
         registry.registerBackgroundProvider(this);
-        WindowLogger.debug("[MOD] BackgroundProvider registered");
 
         registry.registerControlAdapter(this);
-        WindowLogger.debug("[MOD] ControlAdapter registered");
 
         registry.registerRenderAdapter(this);
-        WindowLogger.debug("[MOD] RenderAdapter registered");
 
         registry.registerGameMechanic(this);
-        WindowLogger.debug("[MOD] GameMechanic registered");
 
-        WindowLogger.debug("[MOD] Ultimate Mod Example initialization complete!");
     }
 
     @Override
@@ -74,23 +70,41 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
 
     @Override
     public void drawBackground(Graphics2D g, int width, int height, long timestamp) {
-        // Background gradient
-        GradientPaint bgGradient = new GradientPaint(
-                0, 0, new Color(5, 5, 20),
-                width, height, new Color(15, 15, 40)
-        );
-        g.setPaint(bgGradient);
-        g.fillRect(0, 0, width, height);
+        // Re-initialize buffer if size changed
+        if (fractalBuffer == null || width != lastWidth || height != lastHeight) {
+            fractalBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D bufferG = fractalBuffer.createGraphics();
 
-        // Show mod status information
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 14));
-        g.drawString("Ultimate Fractal Mod - Press keys to grow the fractal", 20, 20);
-        g.drawString("Press 1-9 to change symmetry, F to change fractal type, C to clear", 20, 40);
+            // Draw initial gradient
+            GradientPaint bgGradient = new GradientPaint(
+                    0, 0, new Color(5, 5, 20),
+                    width, height, new Color(15, 15, 40)
+            );
+            bufferG.setPaint(bgGradient);
+            bufferG.fillRect(0, 0, width, height);
+            bufferG.dispose();
 
-        // Draw fractal points with their colors
-        List<FractalGenerator.ColoredPoint> points = fractalGenerator.getFractalPoints();
-        g.drawString("Points: " + points.size(), 20, 60);
+            lastWidth = width;
+            lastHeight = height;
+
+            // Force redraw all points
+            List<FractalGenerator.ColoredPoint> allPoints = fractalGenerator.getFractalPoints();
+            drawPointsToBuffer(allPoints, width, height);
+        }
+
+        // Draw only new points to buffer
+        List<FractalGenerator.ColoredPoint> newPoints = fractalGenerator.getNewPoints();
+        if (!newPoints.isEmpty()) {
+            drawPointsToBuffer(newPoints, width, height);
+        }
+
+        // Draw the buffer to screen
+        g.drawImage(fractalBuffer, 0, 0, null);
+
+    }
+
+    private void drawPointsToBuffer(List<FractalGenerator.ColoredPoint> points, int width, int height) {
+        Graphics2D bufferG = fractalBuffer.createGraphics();
 
         // Draw each point
         for (FractalGenerator.ColoredPoint point : points) {
@@ -102,12 +116,18 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
             if (x < 0 || x >= width || y < 0 || y >= height) continue;
 
             // Draw with appropriate color
-            g.setColor(point.color());
+            bufferG.setColor(point.color());
             int size = Math.min(3, 1 + (int)(Math.log1p(point.hitCount()) / 3));
-            g.fillRect(x, y, size, size);
+            bufferG.fillRect(x, y, size, size);
         }
+
+        bufferG.dispose();
     }
 
+    // Add this method to clear the buffer when needed
+    private void clearFractalBuffer() {
+        fractalBuffer = null; // Force redraw on next frame
+    }
     @Override
     public boolean isDynamic() {
         return true;
@@ -126,12 +146,18 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
     @Override
     public boolean interceptKeyEvent(KeyEvent e) {
         if (e.getID() == KeyEvent.KEY_PRESSED) {
-            WindowLogger.debug("[MOD] Key pressed: " + KeyEvent.getKeyText(e.getKeyCode()));
             fractalGenerator.addEvent(e);
         }
 
         if (e.getID() != KeyEvent.KEY_PRESSED) {
             return false;
+        }
+        if (e.getID() == KeyEvent.KEY_PRESSED) {
+            if (e.getKeyCode() == KeyEvent.VK_F ||
+                    e.getKeyCode() == KeyEvent.VK_C ||
+                    (e.getKeyCode() >= KeyEvent.VK_1 && e.getKeyCode() <= KeyEvent.VK_9)) {
+                clearFractalBuffer();
+            }
         }
 
         int keyCode = e.getKeyCode();
@@ -139,7 +165,6 @@ public class ModExample implements IMod, IBackgroundProvider, IControlAdapter, I
         // Toggle rainbow mode with R key
         if (keyCode == KeyEvent.VK_R) {
             rainbowMode = !rainbowMode;
-            WindowLogger.debug("[MOD] Rainbow mode toggled: " + (rainbowMode ? "ON" : "OFF"));
             return true;
         }
 

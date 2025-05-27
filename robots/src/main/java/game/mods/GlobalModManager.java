@@ -28,7 +28,7 @@ public class GlobalModManager {
     private MainApplicationFrame mainApplicationFrame;
 
     private GlobalModManager() {
-        // Private constructor for singleton
+        //singleton
     }
 
     public static GlobalModManager getInstance() {
@@ -57,28 +57,7 @@ public class GlobalModManager {
 
     }
 
-    // Modify the loadModsFromDirectory method in GlobalModManager
-    public void loadModsFromDirectory(String directory) {
-        File modsDir = new File(directory);
-        if (!modsDir.exists() || !modsDir.isDirectory()) {
-            WindowLogger.error("Mods directory does not exist: " + directory);
-            return;
-        }
 
-        File[] jarFiles = modsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
-        if (jarFiles == null || jarFiles.length == 0) {
-            WindowLogger.debug("No mod JAR files found in directory: " + directory);
-            return;
-        }
-
-        Arrays.stream(jarFiles).forEach(file -> {
-            try {
-                modManager.loadModAndStore(file.toPath());
-            } catch (Exception e) {
-                WindowLogger.error("Failed to load mod from " + file.getName() + ": " + e.getMessage());
-            }
-        });
-    }
 
     public void loadModsFromProfile(Profile profile) {
         if (profile == null || profile.getModPaths() == null) {

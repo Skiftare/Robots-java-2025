@@ -113,10 +113,8 @@ public class GameVisualizer extends JPanel {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (modManager.interceptKeyEvent(e)) {
-                    // Key was handled by a mod
                     return;
                 }
-                // Otherwise process normally
             }
         });
 

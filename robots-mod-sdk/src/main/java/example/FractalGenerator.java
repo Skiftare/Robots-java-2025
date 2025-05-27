@@ -26,6 +26,8 @@ public class FractalGenerator {
     private final SecureRandom random = new SecureRandom();
     private final AfinCompose afinCompose;
     private Transformation currentTransformation; // Single active transformation
+    private final List<ColoredPoint> newPoints = new ArrayList<>(); // Track new points
+    private final Object newPointsLock = new Object(); // Lock for thread safety
 
 
     private static final Transformation[] TRANSFORMATIONS = new Transformation[]{
@@ -35,10 +37,10 @@ public class FractalGenerator {
             new SphericalTransformation()
     };
 
-    private int symmetry = random.nextInt(0,9);
+    private int symmetry = random.nextInt(0, 9);
     private int currentPointLimit = 2000; // Starting small
     private int maxPoints = 5000000;
-    private int fractalType = random.nextInt(0,TRANSFORMATIONS.length); // Current fractal type
+    private int fractalType = random.nextInt(0, TRANSFORMATIONS.length); // Current fractal type
 
     private int growthFactor = 120;
     private int interactionCount = 0;
@@ -191,7 +193,13 @@ public class FractalGenerator {
             int hits = existing == null ? 1 : existing.hitCount() + 1;
             Color color = getColorForHitCount(hits, baseColor);
 
-            fractalPoints.put(hash, new ColoredPoint(xRot, yRot, color, hits));
+            ColoredPoint newPoint = new ColoredPoint(xRot, yRot, color, hits);
+            fractalPoints.put(hash, newPoint);
+
+            // Add to new points list
+            synchronized (newPointsLock) {
+                newPoints.add(newPoint);
+            }
         }
     }
 
@@ -210,5 +218,18 @@ public class FractalGenerator {
 
     public void shutdown() {
         Thread.currentThread().interrupt();
+    }
+
+    public List<ColoredPoint> getNewPoints() {
+        synchronized (newPointsLock) {
+            List<ColoredPoint> points = new ArrayList<>(newPoints);
+            newPoints.clear();
+            return points;
+        }
+    }
+
+    // For total count display
+    public int getTotalPointCount() {
+        return fractalPoints.size();
     }
 }
